@@ -1,0 +1,3419 @@
+<!DOCTYPE html>
+<!-- saved from url=(0141)file:///C:/Users/user/Downloads/%E5%B0%8F%E9%B3%A5%E5%B9%BC%E5%85%92%E5%9C%92_%E9%A4%90%E9%BB%9E%E8%A1%A8%E7%94%A2%E7%94%9F%E5%99%A8_v21.html -->
+<html lang="zh-TW"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>小鳥幼兒園 餐點表產生器</title>
+<style>
+:root {
+  --green-d: #2E7D32; --green-m: #388E3C; --green-l: #A5D6A7; --green-xl: #E8F5E9;
+  --fri-d: #E65100; --fri-l: #FFF3E0;
+  --red-d: #B71C1C; --red-l: #FFCDD2;
+  --gray-d: #616161; --gray-l: #F5F5F5; --gray-m: #E0E0E0;
+  --blue-d: #1565C0; --blue-l: #E3F2FD;
+  --amber-d: #F57F17; --amber-l: #FFF8E1;
+  --white: #FFFFFF; --text: #212121; --text2: #616161;
+  --border: #C8E6C9; --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, "Microsoft JhengHei", sans-serif; background: #F1F8E9; color: var(--text); min-height: 100vh; }
+
+/* ── 頂部導覽 ── */
+.topbar { background: var(--green-d); color: white; padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
+.topbar-title { font-size: 17px; font-weight: 700; flex: 1; }
+.topbar-sub { font-size: 12px; opacity: 0.8; }
+.conn-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
+.conn-badge.ok { background: #69F0AE; color: #1B5E20; }
+.conn-badge.err { background: #FF5252; color: white; }
+.conn-badge.loading { background: rgba(255,255,255,0.2); color: white; }
+
+/* ── 頁籤 ── */
+.tabs { display: flex; background: var(--green-m); padding: 0 24px; gap: 4px; }
+.tab { padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: rgba(255,255,255,0.7); border-bottom: 3px solid transparent; transition: all 0.2s; }
+.tab:hover { color: white; }
+.tab.active { color: white; border-bottom-color: #69F0AE; }
+
+/* ── 主內容 ── */
+.content { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.section { display: none; }
+.section.active { display: block; }
+
+/* ── 卡片 ── */
+.card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+.card-title { font-size: 14px; font-weight: 700; color: var(--green-d); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+/* ── 表單元件 ── */
+.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+label { font-size: 13px; color: var(--text2); min-width: 80px; }
+select, input[type=text], input[type=date] {
+  font-size: 13px; padding: 7px 10px; border: 1px solid var(--gray-m);
+  border-radius: 6px; background: white; color: var(--text); font-family: inherit;
+}
+select:focus, input:focus { outline: 2px solid var(--green-l); border-color: var(--green-d); }
+
+/* ── 按鈕 ── */
+.btn { padding: 8px 16px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; transition: all 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
+.btn-primary { background: var(--green-d); color: white; }
+.btn-primary:hover { background: var(--green-m); }
+.btn-secondary { background: white; color: var(--green-d); border: 1px solid var(--green-d); }
+.btn-secondary:hover { background: var(--green-xl); }
+.btn-danger { background: white; color: var(--red-d); border: 1px solid var(--red-l); }
+.btn-danger:hover { background: var(--red-l); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── 訊息 ── */
+.msg { font-size: 13px; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; }
+.msg-info { background: var(--blue-l); color: var(--blue-d); }
+.msg-success { background: var(--green-xl); color: var(--green-d); }
+.msg-error { background: var(--red-l); color: var(--red-d); }
+.msg-warn { background: var(--amber-l); color: var(--amber-d); }
+
+/* ── 菜單表格 ── */
+.menu-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+.menu-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
+.menu-table th { background: var(--green-xl); color: var(--green-d); font-weight: 700; padding: 9px 10px; text-align: center; border-bottom: 2px solid var(--green-l); white-space: nowrap; }
+.menu-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.6; }
+.menu-table tr:last-child td { border-bottom: none; }
+.menu-table tr.row-work:nth-child(even) td { background: #FAFFFE; }
+.menu-table tr.row-fri td { background: var(--fri-l); }
+.menu-table tr.row-hol td { background: var(--red-l); color: var(--red-d); text-align: center; font-weight: 600; }
+.menu-table tr.row-wkd td { background: var(--gray-l); color: var(--gray-d); }
+.cell-edit { cursor: pointer; min-height: 28px; border-radius: 4px; }
+.cell-edit:hover { background: rgba(46,125,50,0.07); }
+.cell-edit textarea { width: 100%; font-size: 12px; padding: 4px 6px; border: 1px solid var(--green-l); border-radius: 4px; font-family: inherit; resize: vertical; min-height: 48px; background: white; }
+.tag-dairy { display: inline-block; font-size: 10px; background: #E3F2FD; color: #1565C0; padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-bottom: 2px; }
+.tag-special { display: inline-block; font-size: 10px; background: var(--fri-l); color: var(--fri-d); padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-bottom: 2px; }
+
+/* ── 資料庫表格 ── */
+.db-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.db-table th { background: var(--green-xl); color: var(--green-d); font-weight: 700; padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--green-l); }
+.db-table td { padding: 7px 10px; border-bottom: 1px solid var(--gray-m); vertical-align: middle; }
+.db-table tr:last-child td { border-bottom: none; }
+.db-table tr:hover td { background: var(--green-xl); }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
+.badge-on { background: var(--green-xl); color: var(--green-d); }
+.badge-off { background: var(--red-l); color: var(--red-d); }
+.badge-meat-pig { background: #FFF3E0; color: #E65100; }
+.badge-meat-chicken { background: #E3F2FD; color: #1565C0; }
+.badge-meat-seafood { background: #E0F2F1; color: #00695C; }
+.badge-bean { background: var(--green-xl); color: var(--green-d); }
+.badge-egg { background: #FFF3E0; color: #E65100; }
+.badge-dark { background: #1B5E20; color: white; }
+.badge-semi { background: var(--amber-l); color: var(--amber-d); }
+.badge-warn { background: var(--red-l); color: var(--red-d); }
+
+/* ── 歷史記錄 ── */
+.history-list { display: grid; gap: 8px; }
+.history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--green-xl); border-radius: 6px; border: 1px solid var(--border); }
+.history-item-label { font-size: 13px; font-weight: 600; color: var(--green-d); }
+.history-item-count { font-size: 11px; color: var(--text2); }
+
+/* ── loading ── */
+.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
+.loading-overlay.show { display: flex; }
+.loading-box { background: white; border-radius: 12px; padding: 28px 36px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
+.loading-spinner { width: 36px; height: 36px; border: 4px solid var(--green-l); border-top-color: var(--green-d); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 14px; color: var(--text2); }
+
+/* ── 設定頁 ── */
+.setting-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; }
+.setting-label { font-size: 13px; font-weight: 600; min-width: 120px; padding-top: 8px; }
+.setting-input { flex: 1; }
+.setting-input input { width: 100%; }
+.setting-desc { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+/* ── RWD ── */
+@media (max-width: 600px) {
+  .topbar { padding: 0 12px; } .tabs { padding: 0 8px; } .tab { padding: 10px 12px; font-size: 12px; }
+  .content { padding: 12px 8px; }
+}
+
+/* ── PDF 列印樣式 ── */
+@media print {
+  /* 隱藏所有工具介面，只顯示 PDF 列印區 */
+  body > * { display: none !important; }
+  #pdf-print-area { display: block !important; }
+
+  body {
+    background: white;
+    font-family: Arial, "Microsoft JhengHei", sans-serif;
+    margin: 0; padding: 0;
+  }
+
+  #pdf-print-area {
+    display: block !important;
+    width: 100%;
+  }
+
+  .pdf-header { margin-bottom: 1px; }
+  .pdf-school { font-size: 13pt !important; letter-spacing: 2px !important; }
+  .pdf-month  { font-size: 9pt !important; margin-top: 1px !important; }
+  .pdf-hint   { font-size: 6.5pt !important; padding: 1px 5px !important; margin-top: 1px !important; }
+
+  .pdf-table  { font-size: 7.5pt !important; margin-top: 2px !important; }
+  .pdf-table th { padding: 3px 3px !important; font-size: 8pt !important; }
+  .pdf-table td { padding: 2px 4px !important; line-height: 1.25 !important; white-space: nowrap; overflow: hidden; }
+
+  .pdf-footer { font-size: 5.5pt !important; margin-top: 2px !important; }
+
+  @page {
+    size: A4 landscape;
+    margin: 6mm 5mm;
+  }
+}
+
+  .pdf-header {
+    text-align: center;
+    margin-bottom: 6px;
+  }
+  .pdf-school {
+    font-size: 20pt;
+    font-weight: bold;
+    color: #2E7D32;
+    letter-spacing: 4px;
+  }
+  .pdf-month {
+    font-size: 13pt;
+    color: #388E3C;
+    margin-top: 2px;
+  }
+  .pdf-hint {
+    font-size: 7.5pt;
+    color: #558B2F;
+    margin-top: 4px;
+    padding: 3px 8px;
+    background: #F1F8E9;
+    border-radius: 4px;
+    display: inline-block;
+  }
+  .pdf-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+    margin-top: 8px;
+    table-layout: fixed;
+  }
+  .pdf-table th {
+    background: #A5D6A7 !important;
+    color: #1B5E20;
+    font-weight: bold;
+    padding: 5px 4px;
+    text-align: center;
+    border: 1px solid #81C784;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .pdf-table td {
+    padding: 4px 5px;
+    border: 1px solid #C8E6C9;
+    vertical-align: top;
+    line-height: 1.5;
+    word-break: break-all;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .pdf-row-work { background: #FFFFFF; }
+  .pdf-row-alt  { background: #F1F8E9 !important; }
+  .pdf-row-wkd  { background: #F5F5F5 !important; color: #9E9E9E; }
+  .pdf-row-hol  { background: #FFCDD2 !important; color: #B71C1C; font-weight: bold; }
+  .pdf-cell-date { text-align: center; width: 8%; white-space: nowrap; }
+  .pdf-cell-week { text-align: center; width: 4%; }
+  .pdf-cell-am   { width: 20%; }
+  .pdf-cell-lunch{ width: 38%; }
+  .pdf-cell-pm   { width: 30%; }
+  .pdf-footer {
+    margin-top: 6px;
+    font-size: 7pt;
+    color: #9E9E9E;
+    font-style: italic;
+  }
+  @page {
+    size: A4 landscape;
+    margin: 10mm 8mm;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-box">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">連線 Google Sheet 資料庫⋯</div>
+  </div>
+</div>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-title">🍱 小鳥幼兒園 餐點表產生器</div>
+    <div class="topbar-sub">連接 Google Sheet 資料庫</div>
+  </div>
+  <span class="conn-badge ok" id="connBadge">✓ 已連線</span>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab(&#39;generate&#39;,this)">📅 產生菜單</button>
+  <button class="tab" onclick="showTab(&#39;db&#39;,this)">🗂 餐點資料庫</button>
+  <button class="tab" onclick="showTab(&#39;holiday&#39;,this)">📌 假日設定</button>
+  <button class="tab" onclick="showTab(&#39;history&#39;,this)">📚 歷史菜單</button>
+  <button class="tab" onclick="showTab(&#39;setting&#39;,this)">⚙️ 設定</button>
+</div>
+
+<div class="content">
+
+<!-- ══ 產生菜單 ══ -->
+<div id="sec-generate" class="section active">
+  <div class="card">
+    <div class="card-title">📅 產生月份菜單</div>
+    <div class="row">
+      <label>幼兒園名稱</label>
+      <input type="text" id="schoolName" value="小鳥幼兒園" style="width:180px">
+    </div>
+    <div class="row">
+      <label>選擇月份</label>
+      <select id="selYear">
+        <option value="113">113年</option><option value="114">114年</option>
+        <option value="115" selected="">115年</option><option value="116">116年</option>
+      </select>
+      <select id="selMonth">
+        <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+        <option value="4">4月</option><option value="5">5月</option><option value="6" selected="">6月</option>
+        <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+        <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+      </select>
+      <button class="btn btn-primary" onclick="generateMenu()" id="btnGenerate">✨ 產生菜單</button>
+      <button class="btn btn-secondary" id="btnExport" style="display:none" onclick="exportExcel()">📥 匯出 Excel</button>
+      <button class="btn btn-primary" id="btnPdf" style="display:none" onclick="exportPdf()">📄 匯出 PDF</button>
+      <button class="btn btn-secondary" id="btnSaveHistory" style="display:none" onclick="saveToHistory()">💾 儲存至歷史菜單</button>
+    </div>
+    <div id="generateMsg"></div>
+  </div>
+  <div id="menuArea"></div>
+</div>
+
+<!-- ══ 餐點資料庫 ══ -->
+<div id="sec-db" class="section">
+  <div class="card">
+    <div class="card-title">➕ 新增品項</div>
+    <div class="row">
+      <label>餐別分類</label>
+      <select id="addCat">
+        <option value="morning_snack">上午點心</option>
+        <option value="afternoon_snack">下午點心</option>
+        <option value="dairy">乳製品</option>
+        <option value="lunch_main">午餐主食</option>
+        <option value="lunch_special">週五特餐</option>
+        <option value="lunch_meat">午餐肉類</option>
+        <option value="lunch_veg">午餐青菜類</option>
+        <option value="lunch_bean_egg">午餐豆蛋類</option>
+        <option value="lunch_soup">午餐湯品</option>
+      </select>
+      <input type="text" id="addName" placeholder="品項名稱" style="width:150px">
+      <input type="text" id="addIng" placeholder="食材內容（以頓號分隔）" style="width:220px">
+      <button class="btn btn-primary" onclick="addItem()">新增</button>
+    </div>
+    <div id="addMsg"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">🗂 現有品項</div>
+    <div class="row" style="margin-bottom:14px">
+      <label>篩選分類</label>
+      <select id="filterCat" onchange="renderDb()">
+        <option value="all">全部</option>
+        <option value="morning_snack">上午點心</option>
+        <option value="afternoon_snack">下午點心</option>
+        <option value="dairy">乳製品</option>
+        <option value="lunch_main">午餐主食</option>
+        <option value="lunch_special">週五特餐</option>
+        <option value="lunch_meat">午餐肉類</option>
+        <option value="lunch_veg">午餐青菜類</option>
+        <option value="lunch_bean_egg">午餐豆蛋類</option>
+        <option value="lunch_soup">午餐湯品</option>
+      </select>
+      <span id="dbCount" style="font-size:12px;color:var(--text2)">共 246 筆</span>
+    </div>
+    <div style="overflow-x:auto"><table class="db-table" id="dbTable"><thead><tr>
+    <th>餐別</th><th>品項名稱</th><th>食材內容</th><th>備註</th><th style="width:60px">狀態</th><th style="width:60px"></th>
+  </tr></thead><tbody><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">營養穀片</td>
+        <td style="font-size:11px;color:var(--text2)">穀片、牛奶</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;營養穀片&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">草莓吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、草莓醬</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;草莓吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">花生吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、花生醬</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;花生吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">椰子吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、椰子醬</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;椰子吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">芝麻醬吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、芝麻醬</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;芝麻醬吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">蔥花麵包</td>
+        <td style="font-size:11px;color:var(--text2)">麵包、蔥花</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;蔥花麵包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">肉鬆麵包</td>
+        <td style="font-size:11px;color:var(--text2)">麵包、肉鬆</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;肉鬆麵包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">奶酥麵包</td>
+        <td style="font-size:11px;color:var(--text2)">麵包、奶酥</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;奶酥麵包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">奶酥吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、奶酥</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;奶酥吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">餐包</td>
+        <td style="font-size:11px;color:var(--text2)">麵包</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;餐包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">鮮肉包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、豬絞肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;鮮肉包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">筍香包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、竹筍、豬肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;筍香包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">芋泥包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、芋頭</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;芋泥包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">叉燒包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、叉燒肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;叉燒包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">醬燒小籠包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、豬絞肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;醬燒小籠包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">奶皇包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、奶皇餡</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;奶皇包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">芋泥饅頭</td>
+        <td style="font-size:11px;color:var(--text2)">麵粉、芋頭</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;芋泥饅頭&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">黑糖饅頭</td>
+        <td style="font-size:11px;color:var(--text2)">麵粉、黑糖</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;黑糖饅頭&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">全麥饅頭</td>
+        <td style="font-size:11px;color:var(--text2)">全麥麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;全麥饅頭&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">五穀饅頭</td>
+        <td style="font-size:11px;color:var(--text2)">五穀麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;五穀饅頭&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">鮮奶饅頭</td>
+        <td style="font-size:11px;color:var(--text2)">麵粉、鮮奶</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;鮮奶饅頭&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">饅頭夾蛋</td>
+        <td style="font-size:11px;color:var(--text2)">麵粉、雞蛋</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;饅頭夾蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">高麗菜包</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、高麗菜、豬肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;高麗菜包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">蜂蜜蛋糕</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、蜂蜜、麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;蜂蜜蛋糕&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">蘿蔔糕</td>
+        <td style="font-size:11px;color:var(--text2)">白蘿蔔、米漿</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;蘿蔔糕&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">蛋捲</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;蛋捲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">煎餃</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、豬絞肉、高麗菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;煎餃&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">蛋餅</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、麵皮</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;蛋餅&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">廣東粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、豬肉、皮蛋</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;廣東粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">鱸魚蔬菜粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、鱸魚、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;鱸魚蔬菜粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">銀絲卷</td>
+        <td style="font-size:11px;color:var(--text2)">麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;銀絲卷&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">蔬菜鮮肉粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、豬肉、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;蔬菜鮮肉粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">雞蛋麵線</td>
+        <td style="font-size:11px;color:var(--text2)">麵線、雞蛋</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;雞蛋麵線&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">皮蛋瘦肉粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、皮蛋、瘦肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;皮蛋瘦肉粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">上午點心</span></td>
+        <td style="font-weight:600">古早味麵線</td>
+        <td style="font-size:11px;color:var(--text2)">麵線、肉燥</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;morning_snack&#39;,&#39;古早味麵線&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">珍珠丸子</td>
+        <td style="font-size:11px;color:var(--text2)">糯米、豬絞肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;珍珠丸子&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">五彩鹹粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、蔬菜、豬肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;五彩鹹粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">什錦冬粉羹</td>
+        <td style="font-size:11px;color:var(--text2)">冬粉、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;什錦冬粉羹&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">小三明治</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、火腿、雞蛋</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;小三明治&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">蔬菜鮮肉雲吞</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、豬絞肉、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;蔬菜鮮肉雲吞&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">黑糖地瓜湯</td>
+        <td style="font-size:11px;color:var(--text2)">地瓜、黑糖</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;黑糖地瓜湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">蜂蜜檸檬愛玉</td>
+        <td style="font-size:11px;color:var(--text2)">愛玉、蜂蜜、檸檬</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;蜂蜜檸檬愛玉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">綠豆薏仁湯</td>
+        <td style="font-size:11px;color:var(--text2)">綠豆、薏仁</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;綠豆薏仁湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">熱壓吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、起司</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;熱壓吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">雞蛋糕</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;雞蛋糕&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">現烤比薩</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、起司、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;現烤比薩&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">台式碎脯粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、肉鬆</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;台式碎脯粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">鮮肉雲吞</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、豬絞肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;鮮肉雲吞&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">蔥油餅</td>
+        <td style="font-size:11px;color:var(--text2)">麵粉、蔥</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;蔥油餅&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">紅豆紫米湯</td>
+        <td style="font-size:11px;color:var(--text2)">紅豆、紫米</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;紅豆紫米湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">麵線羹</td>
+        <td style="font-size:11px;color:var(--text2)">麵線、肉羹</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;麵線羹&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">香菇竹筍粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、香菇、竹筍</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;香菇竹筍粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">紅豆湯圓</td>
+        <td style="font-size:11px;color:var(--text2)">湯圓、紅豆</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;紅豆湯圓&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">牛奶麥片</td>
+        <td style="font-size:11px;color:var(--text2)">麥片、牛奶</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">其他類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;牛奶麥片&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">綠豆甜湯</td>
+        <td style="font-size:11px;color:var(--text2)">綠豆</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;綠豆甜湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">波菜小魚粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、菠菜、吻仔魚</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;波菜小魚粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">蒸地瓜</td>
+        <td style="font-size:11px;color:var(--text2)">地瓜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">其他類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;蒸地瓜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">蛋塔</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;蛋塔&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">香甜玉米</td>
+        <td style="font-size:11px;color:var(--text2)">玉米</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">其他類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;香甜玉米&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">雞蓉五彩粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、雞肉、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;雞蓉五彩粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">皮蛋瘦肉粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、皮蛋、瘦肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;皮蛋瘦肉粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">糙米排骨粥</td>
+        <td style="font-size:11px;color:var(--text2)">糙米、排骨</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;糙米排骨粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">紅豆吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、紅豆</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;紅豆吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">仙草奶凍</td>
+        <td style="font-size:11px;color:var(--text2)">仙草、牛奶</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">其他類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;仙草奶凍&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">五穀餅乾</td>
+        <td style="font-size:11px;color:var(--text2)">五穀</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;五穀餅乾&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">地瓜稀飯</td>
+        <td style="font-size:11px;color:var(--text2)">白米、地瓜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;地瓜稀飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">台式什錦粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;台式什錦粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">什錦米苔目</td>
+        <td style="font-size:11px;color:var(--text2)">米苔目、蔬菜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;什錦米苔目&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">牛奶西米露</td>
+        <td style="font-size:11px;color:var(--text2)">西米露、牛奶</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">其他類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;牛奶西米露&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">波蘿麵包</td>
+        <td style="font-size:11px;color:var(--text2)">麵包</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span> <span class="badge badge-warn">高油糖鹽</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;波蘿麵包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">肉蛋吐司</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、豬肉、雞蛋</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;肉蛋吐司&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">八寶粥</td>
+        <td style="font-size:11px;color:var(--text2)">糯米、紅豆、蓮子</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;八寶粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">南瓜粥</td>
+        <td style="font-size:11px;color:var(--text2)">白米、南瓜</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;南瓜粥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">芋頭西米露</td>
+        <td style="font-size:11px;color:var(--text2)">西米露、芋頭</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">其他類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;芋頭西米露&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">關東煮</td>
+        <td style="font-size:11px;color:var(--text2)">蘿蔔、豆腐、貢丸</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;關東煮&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">仙草蜜</td>
+        <td style="font-size:11px;color:var(--text2)">仙草</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;仙草蜜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">古早味豆花</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐花</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;古早味豆花&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">紅豆薏仁湯</td>
+        <td style="font-size:11px;color:var(--text2)">紅豆、薏仁</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">甜湯類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;紅豆薏仁湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">餛飩湯</td>
+        <td style="font-size:11px;color:var(--text2)">麵皮、豬絞肉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;餛飩湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">大滷麵</td>
+        <td style="font-size:11px;color:var(--text2)">麵條、豬肉、木耳</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">粥飯麵食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;大滷麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">火腿三明治</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、火腿</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;火腿三明治&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">鮪魚三明治</td>
+        <td style="font-size:11px;color:var(--text2)">吐司、鮪魚</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">鹹食類</span> <span class="badge" style="background:#E8EAF6;color:#283593">鹹</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;鮪魚三明治&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">奶酥餐包</td>
+        <td style="font-size:11px;color:var(--text2)">麵包、奶酥</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;奶酥餐包&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">下午點心</span></td>
+        <td style="font-weight:600">杯子蛋糕</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、麵粉</td>
+        <td><span class="badge" style="background:#F3E5F5;color:#6A1B9A">麵包糕點類</span> <span class="badge" style="background:#E8EAF6;color:#283593">甜</span> <span class="badge badge-warn">高油糖鹽</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;afternoon_snack&#39;,&#39;杯子蛋糕&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">乳製品</span></td>
+        <td style="font-weight:600">鮮奶</td>
+        <td style="font-size:11px;color:var(--text2)">全脂鮮乳 240ml，符合乳品類建議</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;dairy&#39;,&#39;鮮奶&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">乳製品</span></td>
+        <td style="font-weight:600">保久乳</td>
+        <td style="font-size:11px;color:var(--text2)">全脂保久乳 240ml，外出活動或備用選項</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;dairy&#39;,&#39;保久乳&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">乳製品</span></td>
+        <td style="font-weight:600">原味優酪乳</td>
+        <td style="font-size:11px;color:var(--text2)">無添加糖，注意勿選調味優酪乳</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;dairy&#39;,&#39;原味優酪乳&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">乳製品</span></td>
+        <td style="font-weight:600">起司片</td>
+        <td style="font-size:11px;color:var(--text2)">乳酪 2 片（45g）= 1 份乳品，可搭配吐司或餐點</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;dairy&#39;,&#39;起司片&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">乳製品</span></td>
+        <td style="font-weight:600">奶粉沖泡</td>
+        <td style="font-size:11px;color:var(--text2)">全脂奶粉 4 匙（30g）沖泡 240ml</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;dairy&#39;,&#39;奶粉沖泡&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">白飯</td>
+        <td style="font-size:11px;color:var(--text2)">白米</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;白飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">糙米飯</td>
+        <td style="font-size:11px;color:var(--text2)">糙米</td>
+        <td><span class="badge badge-on">未精製</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;糙米飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">五穀飯</td>
+        <td style="font-size:11px;color:var(--text2)">五穀米</td>
+        <td><span class="badge badge-on">未精製</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;五穀飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">胚芽飯</td>
+        <td style="font-size:11px;color:var(--text2)">胚芽米</td>
+        <td><span class="badge badge-on">未精製</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;胚芽飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">藜麥飯</td>
+        <td style="font-size:11px;color:var(--text2)">藜麥、白米</td>
+        <td><span class="badge badge-on">未精製</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;藜麥飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">紫米飯</td>
+        <td style="font-size:11px;color:var(--text2)">紫米、白米</td>
+        <td><span class="badge badge-on">未精製</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;紫米飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">咖哩雞飯</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、馬鈴薯、胡蘿蔔、咖哩</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;咖哩雞飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">海鮮燴飯</td>
+        <td style="font-size:11px;color:var(--text2)">蝦仁、魷魚、蔬菜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;海鮮燴飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">什錦燴飯</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、蔬菜、木耳</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;什錦燴飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐主食</span></td>
+        <td style="font-weight:600">香菇肉羹飯</td>
+        <td style="font-size:11px;color:var(--text2)">香菇、豬肉、筍絲、木耳</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_main&#39;,&#39;香菇肉羹飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">火腿蛋炒飯</td>
+        <td style="font-size:11px;color:var(--text2)">火腿、雞蛋、白飯</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;火腿蛋炒飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">肉絲蛋炒飯</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、雞蛋、白飯</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;肉絲蛋炒飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">鮪魚蛋炒飯</td>
+        <td style="font-size:11px;color:var(--text2)">鮪魚、雞蛋、白飯</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;鮪魚蛋炒飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">海鮮炒飯</td>
+        <td style="font-size:11px;color:var(--text2)">蝦仁、花枝、雞蛋、白飯</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;海鮮炒飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">翡翠肉絲火腿蛋炒飯</td>
+        <td style="font-size:11px;color:var(--text2)">菠菜、豬肉絲、火腿、雞蛋、白飯</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;翡翠肉絲火腿蛋炒飯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">什錦炒麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、高麗菜、胡蘿蔔、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;什錦炒麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">木須炒麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、木耳、雞蛋、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;木須炒麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">什錦炒烏龍麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、蔬菜、烏龍麵</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;什錦炒烏龍麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">茄汁義大利螺旋麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、番茄、義大利麵</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;茄汁義大利螺旋麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">什錦大滷麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、木耳、筍絲、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;什錦大滷麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">海鮮麵</td>
+        <td style="font-size:11px;color:var(--text2)">蝦仁、花枝、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;海鮮麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">豬肉高麗菜水餃</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、高麗菜、麵皮</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;豬肉高麗菜水餃&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">日式煎餃</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、高麗菜、麵皮</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;日式煎餃&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">紅醬義大利麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、番茄紅醬、義大利麵</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;紅醬義大利麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">肉燥乾麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;肉燥乾麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">什錦湯麵</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、蔬菜、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;什錦湯麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">週五特餐</span></td>
+        <td style="font-weight:600">香菇肉羹麵</td>
+        <td style="font-size:11px;color:var(--text2)">香菇、豬肉、筍絲、麵條</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_special&#39;,&#39;香菇肉羹麵&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">蒜香滷肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、蒜</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;蒜香滷肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">馬鈴薯燉肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、馬鈴薯、胡蘿蔔</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;馬鈴薯燉肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">黃金雞丁</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;黃金雞丁&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">糖醋丸子</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉</td>
+        <td><span class="badge badge-meat-pig">豬</span> <span class="badge badge-semi">半成品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;糖醋丸子&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">醬燒三杯雞</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、九層塔</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;醬燒三杯雞&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">冬瓜燒肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、冬瓜</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;冬瓜燒肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">紅燒雞翅腿</td>
+        <td style="font-size:11px;color:var(--text2)">雞翅、雞腿</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;紅燒雞翅腿&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">瓜仔肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、瓜仔</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;瓜仔肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">京醬肉絲</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、甜麵醬</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;京醬肉絲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">螞蟻上樹</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、冬粉</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;螞蟻上樹&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">韭黃炒肉絲</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、韭黃</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;韭黃炒肉絲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">咕咾雞丁</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、鳳梨</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;咕咾雞丁&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">滷雞塊</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿塊</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;滷雞塊&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">葡國雞丁</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、馬鈴薯</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;葡國雞丁&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">洋蔥炒肉絲</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉絲、洋蔥</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;洋蔥炒肉絲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">味增燒肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、味噌</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;味增燒肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">香菇肉燥</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、香菇</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;香菇肉燥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">壽喜肉片</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉片、蔬菜</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;壽喜肉片&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">九層香酥雞</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、九層塔</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;九層香酥雞&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">香煎豬里肌</td>
+        <td style="font-size:11px;color:var(--text2)">豬里肌</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;香煎豬里肌&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">打拋豬</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉、九層塔</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;打拋豬&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">梅干菜燒肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬肉、梅干菜</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;梅干菜燒肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">三杯雞</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、九層塔</td>
+        <td><span class="badge badge-meat-chicken">雞</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;三杯雞&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">古早味肉燥</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;古早味肉燥&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">四喜丸子</td>
+        <td style="font-size:11px;color:var(--text2)">豬絞肉</td>
+        <td><span class="badge badge-meat-pig">豬</span> <span class="badge badge-semi">半成品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;四喜丸子&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">紅燒肉</td>
+        <td style="font-size:11px;color:var(--text2)">豬五花</td>
+        <td><span class="badge badge-meat-pig">豬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;紅燒肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">香煎魚片</td>
+        <td style="font-size:11px;color:var(--text2)">魚片</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;香煎魚片&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">糖醋魚條</td>
+        <td style="font-size:11px;color:var(--text2)">魚條</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;糖醋魚條&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">香酥花枝丸</td>
+        <td style="font-size:11px;color:var(--text2)">花枝丸</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span> <span class="badge badge-semi">半成品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;香酥花枝丸&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">薑絲蛤蜊</td>
+        <td style="font-size:11px;color:var(--text2)">蛤蜊、薑絲</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;薑絲蛤蜊&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">土魠魚</td>
+        <td style="font-size:11px;color:var(--text2)">土魠魚</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;土魠魚&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">清蒸魚</td>
+        <td style="font-size:11px;color:var(--text2)">魚</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;清蒸魚&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">蝦仁炒蛋</td>
+        <td style="font-size:11px;color:var(--text2)">蝦仁、雞蛋</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;蝦仁炒蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐肉類</span></td>
+        <td style="font-weight:600">洋蔥炒魷魚</td>
+        <td style="font-size:11px;color:var(--text2)">魷魚、洋蔥</td>
+        <td><span class="badge badge-meat-seafood">海鮮</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_meat&#39;,&#39;洋蔥炒魷魚&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">塔香海茸</td>
+        <td style="font-size:11px;color:var(--text2)">海茸、九層塔</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;塔香海茸&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">蝦香高麗</td>
+        <td style="font-size:11px;color:var(--text2)">高麗菜、蝦米</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;蝦香高麗&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">雙色花椰</td>
+        <td style="font-size:11px;color:var(--text2)">花椰菜、胡蘿蔔</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;雙色花椰&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">蒜香銀芽</td>
+        <td style="font-size:11px;color:var(--text2)">豆芽菜、蒜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;蒜香銀芽&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">清香大陸妹</td>
+        <td style="font-size:11px;color:var(--text2)">大陸妹、蒜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;清香大陸妹&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">清香菠菜</td>
+        <td style="font-size:11px;color:var(--text2)">菠菜、蒜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;清香菠菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">木須青菜</td>
+        <td style="font-size:11px;color:var(--text2)">青菜、雞蛋、木耳</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;木須青菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">蒜香A菜</td>
+        <td style="font-size:11px;color:var(--text2)">A菜、蒜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;蒜香A菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">芹香高麗</td>
+        <td style="font-size:11px;color:var(--text2)">高麗菜、芹菜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;芹香高麗&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">鮮炒三菇</td>
+        <td style="font-size:11px;color:var(--text2)">香菇、金針菇、杏鮑菇</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;鮮炒三菇&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">沙茶空心</td>
+        <td style="font-size:11px;color:var(--text2)">空心菜、沙茶</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;沙茶空心&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">香悶南瓜</td>
+        <td style="font-size:11px;color:var(--text2)">南瓜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">秋</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;香悶南瓜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">咖哩燒洋芋</td>
+        <td style="font-size:11px;color:var(--text2)">馬鈴薯、咖哩</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;咖哩燒洋芋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">炒菠菜</td>
+        <td style="font-size:11px;color:var(--text2)">菠菜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;炒菠菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">薑絲白菜</td>
+        <td style="font-size:11px;color:var(--text2)">白菜、薑絲</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">冬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;薑絲白菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">涼拌海帶絲</td>
+        <td style="font-size:11px;color:var(--text2)">海帶絲</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;涼拌海帶絲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">蒜香長豆</td>
+        <td style="font-size:11px;color:var(--text2)">長豆、蒜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;蒜香長豆&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">碧玉絲瓜</td>
+        <td style="font-size:11px;color:var(--text2)">絲瓜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;碧玉絲瓜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">乾扁四季豆</td>
+        <td style="font-size:11px;color:var(--text2)">四季豆</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">春夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;乾扁四季豆&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">涼拌小黃瓜</td>
+        <td style="font-size:11px;color:var(--text2)">小黃瓜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;涼拌小黃瓜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">香菇燴花椰菜</td>
+        <td style="font-size:11px;color:var(--text2)">花椰菜、香菇</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;香菇燴花椰菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">炒豆苗</td>
+        <td style="font-size:11px;color:var(--text2)">豆苗</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;炒豆苗&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">胡蘿蔔高麗</td>
+        <td style="font-size:11px;color:var(--text2)">胡蘿蔔、高麗菜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;胡蘿蔔高麗&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">開陽白菜</td>
+        <td style="font-size:11px;color:var(--text2)">白菜、蝦米</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">冬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;開陽白菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">白菜滷</td>
+        <td style="font-size:11px;color:var(--text2)">白菜、豆干、木耳</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">冬</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;白菜滷&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">青椒肉絲</td>
+        <td style="font-size:11px;color:var(--text2)">青椒、豬肉絲</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;青椒肉絲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">蒜香芥藍菜</td>
+        <td style="font-size:11px;color:var(--text2)">芥藍菜、蒜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;蒜香芥藍菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">花椰菜燴雞肉</td>
+        <td style="font-size:11px;color:var(--text2)">花椰菜、雞肉</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">冬春</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;花椰菜燴雞肉&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">涼拌萵筍絲</td>
+        <td style="font-size:11px;color:var(--text2)">萵筍</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">春夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;涼拌萵筍絲&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">香菇青菜</td>
+        <td style="font-size:11px;color:var(--text2)">香菇、青菜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;香菇青菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">清炒銀芽</td>
+        <td style="font-size:11px;color:var(--text2)">豆芽菜</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;清炒銀芽&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">蒜香空心菜</td>
+        <td style="font-size:11px;color:var(--text2)">空心菜、蒜</td>
+        <td><span class="badge badge-dark">深色</span> <span class="badge" style="background:#E8F5E9;color:#2E7D32">夏</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;蒜香空心菜&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐青菜類</span></td>
+        <td style="font-weight:600">麻婆豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐、豬絞肉</td>
+        <td><span class="badge" style="background:#E8F5E9;color:#2E7D32">全年</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_veg&#39;,&#39;麻婆豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">玉子燒</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;玉子燒&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">胡蘿蔔炒蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、胡蘿蔔</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;胡蘿蔔炒蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">菜脯蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、蘿蔔干</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;菜脯蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">銀魚烘蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、吻仔魚</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;銀魚烘蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">日式茶碗蒸</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、高湯</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;日式茶碗蒸&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">翡翠蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、菠菜</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;翡翠蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">洋蔥炒蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、洋蔥</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;洋蔥炒蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">番茄炒蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、番茄</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;番茄炒蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">三色蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、皮蛋、鹹蛋</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;三色蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">玉米蒸蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、玉米</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;玉米蒸蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">水蒸蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;水蒸蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">滑蛋豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、豆腐</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;滑蛋豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">蟹柳蒸蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、蟹柳</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;蟹柳蒸蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">肉末蒸蛋</td>
+        <td style="font-size:11px;color:var(--text2)">雞蛋、豬絞肉</td>
+        <td><span class="badge badge-egg">蛋類</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;肉末蒸蛋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">栗子素雞</td>
+        <td style="font-size:11px;color:var(--text2)">素雞、栗子</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;栗子素雞&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">芙蓉豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐、雞蛋</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;芙蓉豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">香菇麵筋</td>
+        <td style="font-size:11px;color:var(--text2)">麵筋、香菇</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;香菇麵筋&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">黃金豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;黃金豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">醬燒豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;醬燒豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">家常豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;家常豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">百頁豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">百頁豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;百頁豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">香滷豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;香滷豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">醬瓜魯豆輪</td>
+        <td style="font-size:11px;color:var(--text2)">豆輪、醬瓜</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;醬瓜魯豆輪&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">魯三角豆干</td>
+        <td style="font-size:11px;color:var(--text2)">豆干</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;魯三角豆干&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">鐵板豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;鐵板豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">紅燒豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;紅燒豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐豆蛋類</span></td>
+        <td style="font-weight:600">麻婆豆腐</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐、豬絞肉</td>
+        <td><span class="badge badge-bean">豆製品</span></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_bean_egg&#39;,&#39;麻婆豆腐&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">金茸蔬菜湯</td>
+        <td style="font-size:11px;color:var(--text2)">金針菇、蔬菜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;金茸蔬菜湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">香菇雞湯</td>
+        <td style="font-size:11px;color:var(--text2)">香菇、雞腿肉</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;香菇雞湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">牛蒡排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、牛蒡</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;牛蒡排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">大黃瓜排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、大黃瓜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;大黃瓜排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">竹筍大骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">大骨、竹筍</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;竹筍大骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">金針排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、金針菇</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;金針排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">蒜頭雞湯</td>
+        <td style="font-size:11px;color:var(--text2)">雞腿肉、蒜頭</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;蒜頭雞湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">蓮藕排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、蓮藕</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;蓮藕排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">山藥排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、山藥</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;山藥排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">蘿蔔排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、白蘿蔔</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;蘿蔔排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">黃芽番茄大骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">大骨、番茄、黃豆芽</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;黃芽番茄大骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">蓮子排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、蓮子</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;蓮子排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">苦瓜排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、苦瓜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;苦瓜排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">冬瓜排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、冬瓜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;冬瓜排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">青菜蛋花湯</td>
+        <td style="font-size:11px;color:var(--text2)">青菜、雞蛋</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;青菜蛋花湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">花菜肉片湯</td>
+        <td style="font-size:11px;color:var(--text2)">花椰菜、豬肉片</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;花菜肉片湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">鮮菇湯</td>
+        <td style="font-size:11px;color:var(--text2)">香菇、金針菇</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;鮮菇湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">綜合丸子湯</td>
+        <td style="font-size:11px;color:var(--text2)">貢丸、魚丸</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;綜合丸子湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">薑絲蛤蜊湯</td>
+        <td style="font-size:11px;color:var(--text2)">蛤蜊、薑絲</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;薑絲蛤蜊湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">黃金蜆湯</td>
+        <td style="font-size:11px;color:var(--text2)">蜆</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;黃金蜆湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">味增鯛魚豆腐湯</td>
+        <td style="font-size:11px;color:var(--text2)">鯛魚、豆腐、味噌</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;味增鯛魚豆腐湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">酸辣湯</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐、木耳、筍絲、雞蛋</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;酸辣湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">南瓜濃湯</td>
+        <td style="font-size:11px;color:var(--text2)">南瓜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;南瓜濃湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">竹筍湯</td>
+        <td style="font-size:11px;color:var(--text2)">竹筍</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;竹筍湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">玉米濃湯</td>
+        <td style="font-size:11px;color:var(--text2)">玉米</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;玉米濃湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">玉米排骨湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、玉米</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;玉米排骨湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">紫菜蛋湯</td>
+        <td style="font-size:11px;color:var(--text2)">紫菜、雞蛋</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;紫菜蛋湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">番茄蛋湯</td>
+        <td style="font-size:11px;color:var(--text2)">番茄、雞蛋</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;番茄蛋湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">豆腐味增湯</td>
+        <td style="font-size:11px;color:var(--text2)">豆腐、味噌</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;豆腐味增湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">金針菇湯</td>
+        <td style="font-size:11px;color:var(--text2)">金針菇</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;金針菇湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">香芹貢丸湯</td>
+        <td style="font-size:11px;color:var(--text2)">貢丸、芹菜</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;香芹貢丸湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">排骨蓮藕湯</td>
+        <td style="font-size:11px;color:var(--text2)">排骨、蓮藕</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;排骨蓮藕湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">海帶芽味增湯</td>
+        <td style="font-size:11px;color:var(--text2)">海帶芽、味噌</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;海帶芽味增湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">青菜豆腐湯</td>
+        <td style="font-size:11px;color:var(--text2)">青菜、豆腐</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;青菜豆腐湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">蘿蔔絲湯</td>
+        <td style="font-size:11px;color:var(--text2)">白蘿蔔</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;蘿蔔絲湯&#39;)">停用</button></td>
+      </tr><tr>
+        <td><span class="badge badge-on">午餐湯品</span></td>
+        <td style="font-weight:600">榨菜肉絲湯</td>
+        <td style="font-size:11px;color:var(--text2)">榨菜、豬肉絲</td>
+        <td></td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem(&#39;lunch_soup&#39;,&#39;榨菜肉絲湯&#39;)">停用</button></td>
+      </tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ 假日設定 ══ -->
+<div id="sec-holiday" class="section">
+  <div class="card">
+    <div class="card-title">➕ 新增假日 / 補班日</div>
+    <div class="msg msg-info">週六日系統自動放假，不需填入。補班日（週六日需上班）請選「補班日」，系統當天會正常排餐點。</div>
+    <div class="row" style="margin-top:12px">
+      <input type="text" id="hdDate" placeholder="日期 YYYY-MM-DD" style="width:160px">
+      <input type="text" id="hdName" placeholder="名稱（如：端午節）" style="width:160px">
+      <select id="hdType">
+        <option value="放假日">放假日</option>
+        <option value="補班日">補班日</option>
+      </select>
+      <button class="btn btn-primary" onclick="addHoliday()">新增</button>
+    </div>
+    <div id="hdMsg"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">📌 假日清單</div>
+    <div style="overflow-x:auto"><table class="db-table" id="hdTable"><thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody><tr>
+      <td>2026-01-01</td>
+      <td style="font-weight:600">元旦</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-01-01&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-01-28</td>
+      <td style="font-weight:600">農曆除夕</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-01-28&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-01-29</td>
+      <td style="font-weight:600">春節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-01-29&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-01-30</td>
+      <td style="font-weight:600">春節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-01-30&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-01-31</td>
+      <td style="font-weight:600">春節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-01-31&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-02-28</td>
+      <td style="font-weight:600">和平紀念日</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-02-28&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-04-03</td>
+      <td style="font-weight:600">兒童節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-04-03&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-04-04</td>
+      <td style="font-weight:600">清明節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-04-04&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-05-01</td>
+      <td style="font-weight:600">勞動節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-05-01&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-06-19</td>
+      <td style="font-weight:600">端午節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-06-19&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-09-27</td>
+      <td style="font-weight:600">中秋節</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-09-27&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-10-10</td>
+      <td style="font-weight:600">國慶日</td>
+      <td><span class="badge badge-warn" style="">放假日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-10-10&#39;)">刪除</button></td>
+    </tr><tr>
+      <td>2026-02-07</td>
+      <td style="font-weight:600">補班範例</td>
+      <td><span class="badge" style="background:#E8EAF6;color:#283593">補班日</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(&#39;2026-02-07&#39;)">刪除</button></td>
+    </tr></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ 歷史菜單 ══ -->
+<div id="sec-history" class="section">
+  <div class="card">
+    <div class="card-title">📚 歷史菜單查詢與下載</div>
+    <div class="msg msg-info">每次產生菜單並按「儲存至歷史菜單」後，系統會自動記錄。產生新菜單時也會比對歷史，避免近期重複。</div>
+    <div class="row" style="margin-top:12px">
+      <label>選擇月份</label>
+      <select id="histYear">
+        <option value="113">113年</option><option value="114">114年</option><option value="115" selected="">115年</option>
+      </select>
+      <select id="histMonth">
+        <option value="01">1月</option><option value="02">2月</option><option value="03">3月</option>
+        <option value="04">4月</option><option value="05">5月</option><option value="06" selected="">6月</option>
+        <option value="07">7月</option><option value="08">8月</option><option value="09">9月</option>
+        <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadHistory()">查詢</button>
+      <button class="btn btn-primary" id="btnDlHistory" style="display:none" onclick="downloadHistory()">📥 下載此月 Excel</button>
+    </div>
+    <div id="historyArea" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ══ 設定 ══ -->
+<div id="sec-setting" class="section">
+  <div class="card">
+    <div class="card-title">⚙️ Google Sheet 連線設定</div>
+    <div class="msg msg-success" style="margin-bottom:12px">✓ 已內建連線設定，任何裝置開啟此工具即可自動連線，無需額外設定。</div>
+    <div style="font-size:13px;line-height:2;color:var(--text2)">
+      <div><span style="font-weight:600;color:var(--green-d)">Google Sheet ID：</span>1IbyZEOf3cTEgEGYwPH8sev3WhdrLJxIPGfzlHhaT56g</div>
+      <div><span style="font-weight:600;color:var(--green-d)">Apps Script：</span>已部署為網路應用程式</div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <button class="btn btn-secondary" onclick="testConnection()">🔌 測試連線</button>
+    </div>
+    <div id="settingMsg"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">ℹ️ 關於本工具</div>
+    <div style="font-size:13px;line-height:2;color:var(--text2)">
+      <div>版本：v1.0　最後更新：2026-07-15</div>
+      <div>適用對象：小鳥幼兒園　2～3位老師共用</div>
+      <div>資料庫：Google Sheet（共 13 個分頁）</div>
+      <div style="margin-top:8px;color:var(--green-d);font-weight:600">餐點設計規則摘要</div>
+      <div>・週一～四：主食＋肉類＋青菜＋豆蛋＋湯品（三菜一湯）</div>
+      <div>・週五：特餐主食＋湯品</div>
+      <div>・下午點心固定附季節水果（廚房阿姨決定）</div>
+      <div>・每週乳製品至少一次・每週海鮮至少一次</div>
+      <div>・每週豆製品至少一次・每週未精製主食至少兩次</div>
+      <div>・同日上下午點心避免同甜・避免同性質類別</div>
+      <div>・近 2～3 個月內同道菜避免重複</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+// 設定與狀態
+// ══════════════════════════════════════════════════════════
+const API_URL = 'https://script.google.com/macros/s/AKfycbyDYYTsokHhlTQ78EuNo5BON2trN-4liByK_0FFU_6OLQSJVpKkeVB-ze-x_4G4eY8/exec';
+let dbData = null;        // 從 Google Sheet 讀取的資料庫
+let generatedMenu = null; // 目前產生的菜單
+let historyData = null;   // 歷史菜單資料
+
+const CAT_LABEL = {
+  morning_snack:'上午點心', afternoon_snack:'下午點心', dairy:'乳製品',
+  lunch_main:'午餐主食', lunch_special:'週五特餐', lunch_meat:'午餐肉類',
+  lunch_veg:'午餐青菜類', lunch_bean_egg:'午餐豆蛋類', lunch_soup:'午餐湯品'
+};
+
+const DAY_NAMES = ['日','一','二','三','四','五','六'];
+
+// ══ 台灣季節對照（月份→當季標籤）══
+const SEASON_MAP = {
+  1:'冬',2:'冬',3:'春',4:'春',5:'春',6:'夏',
+  7:'夏',8:'夏',9:'秋',10:'秋',11:'秋',12:'冬'
+};
+
+// ══════════════════════════════════════════════════════════
+// 工具函式
+// ══════════════════════════════════════════════════════════
+function showLoading(text='處理中，請稍候⋯') {
+  document.getElementById('loadingText').textContent = text;
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading() {
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+function showMsg(id, text, type='info') {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = `<div class="msg msg-${type}">${text}</div>`;
+  setTimeout(()=>{ if(el) el.innerHTML=''; }, 4000);
+}
+
+async function apiFetch(params) {
+  const url = new URL(API_URL);
+  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const res = await fetch(url.toString(), { redirect:'follow', signal: controller.signal });
+    clearTimeout(timer);
+    return res.json();
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+async function apiPost(payload) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const formData = new FormData();
+    formData.append('payload', JSON.stringify(payload));
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      body: formData,
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return res.json();
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+// JSON 方式傳送（給 saveHistory 等需要傳大量資料的操作用）
+async function apiPostJson(payload) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      redirect: 'follow',
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    return res.json();
+  } catch(e) {
+    clearTimeout(timer);
+    throw e;
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 初始化：讀取資料庫
+// ══════════════════════════════════════════════════════════
+async function initApp() {
+  showLoading('連線 Google Sheet 資料庫⋯');
+  try {
+    const data = await apiFetch({action:'getAll'});
+    if (data.error) throw new Error(data.error);
+    dbData = data;
+    document.getElementById('connBadge').textContent = '✓ 已連線';
+    document.getElementById('connBadge').className = 'conn-badge ok';
+    renderDb();
+    renderHolidays();
+  } catch(e) {
+    document.getElementById('connBadge').textContent = '✗ 連線失敗';
+    document.getElementById('connBadge').className = 'conn-badge err';
+    showMsg('generateMsg',
+      '⚠️ 無法連線 Google Sheet，請確認網路連線後點選重試。' +
+      '若剛開啟工具，Apps Script 可能正在喚醒，請等 30 秒後重試。' +
+      '<br><br><button class="btn btn-secondary" onclick="initApp()" style="margin-top:4px">🔄 重試連線</button>',
+      'warn');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 頁籤切換
+// ══════════════════════════════════════════════════════════
+function showTab(t, btn) {
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('sec-'+t).classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════════
+// 菜單產生邏輯
+// ══════════════════════════════════════════════════════════
+function isHoliday(dateStr) {
+  if (!dbData || !dbData.holidays) return null;
+  return dbData.holidays.find(h => h.date === dateStr) || null;
+}
+
+function getWorkDays(rocYear, month) {
+  const adYear = parseInt(rocYear) + 1911;
+  const daysInMonth = new Date(adYear, month, 0).getDate();
+  const days = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${adYear}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dateObj = new Date(ds + 'T00:00:00');
+    const dow = dateObj.getDay(); // 0=Sun,6=Sat
+    const hol = isHoliday(ds);
+    let type = 'work';
+    if (dow === 0 || dow === 6) {
+      // 補班日例外
+      if (hol && hol.type === '補班日') type = 'work';
+      else type = 'weekend';
+    } else if (hol && hol.type === '放假日') {
+      type = 'holiday';
+    } else if (dow === 5) {
+      type = 'fri';
+    }
+    days.push({ date:ds, day:d, dow, dayName:DAY_NAMES[dow], type, holName: hol ? hol.name : null });
+  }
+  return days;
+}
+
+function pickFrom(arr, used, limit=6) {
+  const avail = arr.filter(x => !used.find(u=>u===x.name));
+  const pool = avail.length > 0 ? avail : arr;
+  const v = pool[Math.floor(Math.random() * pool.length)];
+  used.push(v.name);
+  if (used.length > limit) used.shift();
+  return v;
+}
+
+function getCurrentSeason(month) {
+  return SEASON_MAP[month] || '全年';
+}
+
+function filterBySeason(items, month) {
+  const season = getCurrentSeason(month);
+  // 優先選當季或全年，排除非當季
+  const inSeason = items.filter(it => {
+    if (!it.season) return true;
+    return it.season === '全年' || it.season.includes(season);
+  });
+  return inSeason.length > 0 ? inSeason : items;
+}
+
+async function generateMenu() {
+  if (!dbData) { showMsg('generateMsg','尚未連線資料庫，請稍候或至設定頁確認連線。','error'); return; }
+  const rocYear = document.getElementById('selYear').value;
+  const month = parseInt(document.getElementById('selMonth').value);
+  const school = document.getElementById('schoolName').value || '小鳥幼兒園';
+  const adYear = parseInt(rocYear) + 1911;
+  const yearMonthStr = `${adYear}-${String(month).padStart(2,'0')}`;
+
+  showLoading('依規則產生菜單中⋯');
+
+  // 讀取歷史避免重複
+  let historyUsed = [];
+  try {
+    const histRes = await apiFetch({action:'getHistory', yearMonth:''});
+    if (Array.isArray(histRes)) {
+      // 取近3個月
+      const recent = histRes.filter(r => r.yearMonth < yearMonthStr).slice(-60);
+      recent.forEach(r => {
+        [r.morningSnack, r.lunchMain, r.lunchMeat, r.lunchVeg, r.lunchBeanEgg, r.lunchSoup, r.afternoonSnack]
+          .forEach(v => { if(v && !historyUsed.includes(v)) historyUsed.push(v); });
+      });
+    }
+  } catch(e) {}
+
+  const allDays = getWorkDays(rocYear, month);
+
+  // 使用紀錄
+  const usedAmSnack = [...historyUsed];
+  const usedPmSnack = [...historyUsed];
+  const usedMain    = [...historyUsed];
+  const usedSpecial = [...historyUsed];
+  const usedMeat    = [...historyUsed];
+  const usedVeg     = [...historyUsed];
+  const usedBE      = [...historyUsed];
+  const usedSoup    = [...historyUsed];
+
+  const meatTypes = ['豬','雞','海鮮'];
+  let meatTypeIdx = 0;
+  let weekDairyDone = false;
+  let weekSeafoodDone = false;
+  let weekBeanDone = false;
+  let weekWholeGrain = 0;
+  let weekHighFat = 0;
+  let weekSemi = 0;
+  let currentWeek = -1;
+
+  const season = getCurrentSeason(month);
+  const vegInSeason = filterBySeason(dbData.lunch_veg || [], month);
+
+  const menuDays = allDays.map(d => {
+    // 週次重置
+    const dateObj = new Date(d.date + 'T00:00:00');
+    const weekNum = Math.ceil((dateObj.getDate() + new Date(dateObj.getFullYear(), dateObj.getMonth(), 1).getDay()) / 7);
+    if (weekNum !== currentWeek) {
+      currentWeek = weekNum;
+      weekDairyDone = false;
+      weekSeafoodDone = false;
+      weekBeanDone = false;
+      weekWholeGrain = 0;
+      weekHighFat = 0;
+      weekSemi = 0;
+    }
+
+    if (d.type === 'weekend' || d.type === 'holiday') return d;
+
+    const isFri = (d.type === 'fri');
+    const isMonday = (d.dow === 1);
+
+    // 上午點心：週一優先安排乳製品
+    let amSnack, amIsDairy = false;
+    const dairyItems = (dbData.dairy || []);
+    if (!weekDairyDone && (isMonday || d.dow === 2)) {
+      if (dairyItems.length > 0) {
+        amSnack = dairyItems[Math.floor(Math.random() * dairyItems.length)];
+        amIsDairy = true;
+        weekDairyDone = true;
+      }
+    }
+    if (!amSnack) {
+      const amPool = (dbData.morning_snack || []).filter(it => {
+        if (weekHighFat >= 1 && it.highFat) return false;
+        return true;
+      });
+      amSnack = pickFrom(amPool.length ? amPool : (dbData.morning_snack||[]), usedAmSnack, 8);
+      if (amSnack && amSnack.highFat) weekHighFat++;
+    }
+
+    // 下午點心：確保甜鹹不同日同甜，性質不同類
+    let pmSnack;
+    const amTaste = amSnack ? (amSnack.taste || '') : '';
+    const amCat   = amSnack ? (amSnack.category || '') : '';
+    const pmPool  = (dbData.afternoon_snack || []).filter(it => {
+      if (amTaste === '甜' && it.taste === '甜') return false;
+      if (amCat && it.category === amCat) return false;
+      if (weekHighFat >= 1 && it.highFat) return false;
+      return true;
+    });
+    pmSnack = pickFrom(pmPool.length ? pmPool : (dbData.afternoon_snack||[]), usedPmSnack, 8);
+
+    // 午餐
+    let lunch;
+    if (isFri) {
+      const special = pickFrom(dbData.lunch_special||[], usedSpecial, 6);
+      const soup    = pickFrom(dbData.lunch_soup||[], usedSoup, 8);
+      lunch = { type:'special', main:special, soup };
+    } else {
+      // 主食：確保未精製每週至少2次
+      const mainPool = (dbData.lunch_main||[]).filter(it => {
+        if (weekWholeGrain < 2 && d.dow >= 3) return it.wholegrain; // 週三後強制未精製
+        return true;
+      });
+      const main = pickFrom(mainPool.length ? mainPool : (dbData.lunch_main||[]), usedMain, 5);
+      if (main && main.wholegrain) weekWholeGrain++;
+
+      // 肉類：輪替豬雞海鮮，確保每週有海鮮
+      let meatPool = (dbData.lunch_meat||[]).filter(it => {
+        if (weekSemi >= 2 && it.semiProcessed) return false;
+        // 週四前確保海鮮出現
+        if (!weekSeafoodDone && d.dow === 4) return it.meatType === '海鮮';
+        return it.meatType === meatTypes[meatTypeIdx % 3];
+      });
+      if (!meatPool.length) meatPool = dbData.lunch_meat || [];
+      const meat = pickFrom(meatPool, usedMeat, 6);
+      if (meat) {
+        meatTypeIdx++;
+        if (meat.semiProcessed) weekSemi++;
+        if (meat.meatType === '海鮮') weekSeafoodDone = true;
+      }
+
+      // 青菜：優先當季，深色比例
+      const veg = pickFrom(vegInSeason.length ? vegInSeason : (dbData.lunch_veg||[]), usedVeg, 6);
+
+      // 豆蛋類：確保每週豆製品至少一次
+      let bePool = (dbData.lunch_bean_egg||[]);
+      if (!weekBeanDone && d.dow >= 3) {
+        const beanOnly = bePool.filter(it => it.beanType === '豆製品');
+        if (beanOnly.length) bePool = beanOnly;
+      }
+      const beanEgg = pickFrom(bePool, usedBE, 6);
+      if (beanEgg && beanEgg.beanType === '豆製品') weekBeanDone = true;
+
+      const soup = pickFrom(dbData.lunch_soup||[], usedSoup, 8);
+      lunch = { type:'normal', main, meat, veg, beanEgg, soup };
+    }
+
+    return { ...d, amSnack, amIsDairy, pmSnack, lunch };
+  });
+
+  generatedMenu = { rocYear, month, adYear, school, days: menuDays };
+  renderMenuTable(generatedMenu);
+  document.getElementById('btnExport').style.display = '';
+  document.getElementById('btnPdf').style.display = '';
+  document.getElementById('btnSaveHistory').style.display = '';
+  hideLoading();
+}
+
+// ══════════════════════════════════════════════════════════
+// 渲染菜單表格
+// ══════════════════════════════════════════════════════════
+function renderMenuTable(menu) {
+  const { rocYear, month, school, days } = menu;
+  const area = document.getElementById('menuArea');
+
+  let html = `<div class="card" style="padding:0;overflow:hidden">
+  <div style="padding:12px 20px;background:var(--green-xl);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+    <div>
+      <div style="font-size:15px;font-weight:700;color:var(--green-d)">${school}　${rocYear}年${month}月份　餐點表</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">點擊儲存格可手動修改　・　週五特餐：主食＋湯品</div>
+    </div>
+  </div>
+  <div class="menu-wrap">
+  <table class="menu-table">
+  <thead><tr>
+    <th style="width:80px">日期</th><th style="width:36px">星期</th>
+    <th style="min-width:130px">上午點心</th>
+    <th style="min-width:200px">午　　餐</th>
+    <th style="min-width:120px">下午點心</th>
+    <th style="min-width:200px">食材內容</th>
+  </tr></thead><tbody>`;
+
+  days.forEach(d => {
+    const dayLabel = `${month}月${d.day}日`;
+    if (d.type === 'weekend') {
+      html += `<tr class="row-wkd">
+        <td style="text-align:center">${dayLabel}</td>
+        <td style="text-align:center">${d.dayName}</td>
+        <td colspan="4" style="text-align:center;color:var(--gray-d);font-size:11px">放　假</td>
+      </tr>`;
+      return;
+    }
+    if (d.type === 'holiday') {
+      html += `<tr class="row-hol">
+        <td style="text-align:center">${dayLabel}</td>
+        <td style="text-align:center">${d.dayName}</td>
+        <td colspan="4">${d.holName}（放假）</td>
+      </tr>`;
+      return;
+    }
+
+    const l = d.lunch;
+    const amText = d.amIsDairy
+      ? `<span class="tag-dairy">乳製品</span><br>${d.amSnack ? d.amSnack.name : ''}`
+      : (d.amSnack ? d.amSnack.name : '—');
+
+    let lunchText = '';
+    let ingItems = [];
+    if (l.type === 'special') {
+      lunchText = `${l.main ? l.main.name : '—'}<br><span style="color:var(--text2)">${l.soup ? l.soup.name : '—'}</span>`;
+      ingItems = [d.amSnack, l.main, l.soup, d.pmSnack];
+    } else {
+      lunchText = `${l.main ? l.main.name : '—'}<br>${l.meat ? l.meat.name : '—'}<br>${l.veg ? l.veg.name : '—'}<br>${l.beanEgg ? l.beanEgg.name : '—'}<br><span style="color:var(--text2)">${l.soup ? l.soup.name : '—'}</span>`;
+      ingItems = [d.amSnack, l.main, l.meat, l.veg, l.beanEgg, l.soup, d.pmSnack];
+    }
+
+    const pmText = `${d.pmSnack ? d.pmSnack.name : '—'}<br><span style="color:var(--text2);font-size:11px">季節水果</span>`;
+
+    // 合併食材
+    const seen = new Set(); const ingList = [];
+    ingItems.forEach(it => {
+      if (!it || !it.ingredients) return;
+      it.ingredients.split('、').forEach(i => {
+        i = i.trim();
+        if (i && !seen.has(i)) { seen.add(i); ingList.push(i); }
+      });
+    });
+    const ingText = ingList.join('、');
+
+    const rowCls = d.type === 'fri' ? 'row-fri' : 'row-work';
+    html += `<tr class="${rowCls}">
+      <td style="text-align:center;white-space:nowrap">${dayLabel}</td>
+      <td style="text-align:center">${d.dayName}</td>
+      <td class="cell-edit" onclick="editCell(this)">${amText}</td>
+      <td class="cell-edit" onclick="editCell(this)">${lunchText}</td>
+      <td class="cell-edit" onclick="editCell(this)">${pmText}</td>
+      <td style="font-size:11px;color:var(--green-d)">${ingText}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div></div>';
+  area.innerHTML = html;
+}
+
+function editCell(td) {
+  if (td.querySelector('textarea')) return;
+  const cur = td.innerText;
+  const ta = document.createElement('textarea');
+  ta.value = cur;
+  td.innerHTML = '';
+  td.appendChild(ta);
+  ta.focus();
+  ta.addEventListener('blur', () => {
+    const val = ta.value.trim() || cur;
+    td.innerHTML = val.replace(/\n/g,'<br>');
+  });
+}
+
+// ══════════════════════════════════════════════════════════
+// 匯出 PDF（瀏覽器直接列印，完整格式）
+// ══════════════════════════════════════════════════════════
+function exportPdf() {
+  if (!generatedMenu) return;
+  const { rocYear, month, school, days } = generatedMenu;
+
+  // 建立列印用 HTML 區塊
+  let old = document.getElementById('pdf-print-area');
+  if (old) old.remove();
+
+  const div = document.createElement('div');
+  div.id = 'pdf-print-area';
+  div.style.display = 'none';
+
+  // 標題區
+  let html = `
+  <div class="pdf-header">
+    <div class="pdf-school">${school}</div>
+    <div class="pdf-month">${rocYear} 年 ${month} 月份　餐點表</div>
+  </div>
+  <table class="pdf-table">
+  <thead><tr>
+    <th class="pdf-cell-date">日期</th>
+    <th class="pdf-cell-week">星期</th>
+    <th class="pdf-cell-am">上午點心</th>
+    <th class="pdf-cell-lunch">午　　餐</th>
+    <th class="pdf-cell-pm">下午點心</th>
+  </tr></thead><tbody>`;
+
+  let alt = 0;
+  days.forEach(d => {
+    const dayLabel = `${month}月${d.day}日`;
+
+    if (d.type === 'weekend') {
+      html += `<tr class="pdf-row-wkd">
+        <td class="pdf-cell-date">${dayLabel}</td>
+        <td class="pdf-cell-week">${d.dayName}</td>
+        <td colspan="3" style="text-align:center;color:#9E9E9E;font-style:italic">放　假</td>
+      </tr>`;
+      return;
+    }
+
+    if (d.type === 'holiday') {
+      html += `<tr class="pdf-row-hol">
+        <td class="pdf-cell-date">${dayLabel}</td>
+        <td class="pdf-cell-week">${d.dayName}</td>
+        <td colspan="3" style="text-align:center">${d.holName}（放假）</td>
+      </tr>`;
+      return;
+    }
+
+    const rowCls = alt % 2 === 0 ? 'pdf-row-work' : 'pdf-row-alt';
+    alt++;
+
+    const l = d.lunch || {};
+    const amText = d.amIsDairy
+      ? `【乳製品】${d.amSnack ? d.amSnack.name : ''}`
+      : (d.amSnack ? d.amSnack.name : '—');
+
+    let lunchText = '';
+    if (l.type === 'special') {
+      lunchText = `${l.main ? l.main.name : '—'}　${l.soup ? l.soup.name : '—'}`;
+    } else {
+      lunchText = [
+        l.main    ? l.main.name    : '',
+        l.meat    ? l.meat.name    : '',
+        l.veg     ? l.veg.name     : '',
+        l.beanEgg ? l.beanEgg.name : '',
+        l.soup    ? l.soup.name    : '',
+      ].filter(Boolean).join('　');
+    }
+
+    const pmText = `${d.pmSnack ? d.pmSnack.name : '—'}　季節水果`;
+
+    html += `<tr class="${rowCls}">
+      <td class="pdf-cell-date">${dayLabel}</td>
+      <td class="pdf-cell-week">${d.dayName}</td>
+      <td class="pdf-cell-am">${amText}</td>
+      <td class="pdf-cell-lunch">${lunchText}</td>
+      <td class="pdf-cell-pm">${pmText}</td>
+    </tr>`;
+  });
+
+  html += `</tbody></table>
+  <div class="pdf-footer">※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。</div>`;
+
+  div.innerHTML = html;
+  document.body.appendChild(div);
+
+  // 暫時修改 title 控制 PDF 檔名
+  const originalTitle = document.title;
+  document.title = `${school}_${rocYear}年${month}月份_餐點表`;
+
+  // 觸發列印
+  window.print();
+
+  // 列印後還原
+  setTimeout(() => {
+    document.title = originalTitle;
+    div.remove();
+  }, 1000);
+}
+
+// 匯出 Excel（呼叫 Apps Script 產生正式格式 xlsx）
+// ══════════════════════════════════════════════════════════
+async function exportExcel() {
+  if (!generatedMenu) return;
+
+  showLoading('產生 Excel 中⋯');
+  document.getElementById('btnExport').disabled = true;
+
+  try {
+    // 動態載入 ExcelJS
+    if (typeof ExcelJS === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    const { rocYear, month, school, days } = generatedMenu;
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(`${rocYear}年${month}月`);
+
+    // 欄寬
+    ws.columns = [
+      { width: 10 },  // 日期
+      { width: 6  },  // 星期
+      { width: 18 },  // 上午點心
+      { width: 36 },  // 午餐
+      { width: 22 },  // 下午點心
+      { width: 44 },  // 食材內容
+    ];
+
+    const C = {
+      titleBg:'2E7D32', titleFg:'FFFFFF',
+      subBg:'388E3C',
+      hintBg:'F1F8E9', hintFg:'1B5E20',
+      hdrBg:'A5D6A7',  hdrFg:'1B5E20',
+      holBg:'FFCDD2',  holFg:'B71C1C',
+      wkdBg:'F5F5F5',  wkdFg:'9E9E9E',
+      row1:'FFFFFF',   row2:'F1F8E9',
+      ingBg:'E8F5E9',  ingFg:'2E7D32',
+      noteFg:'757575', noteBg:'FAFAFA',
+    };
+
+    const bdr = { top:{style:'thin',color:{argb:'FFC8E6C9'}}, bottom:{style:'thin',color:{argb:'FFC8E6C9'}}, left:{style:'thin',color:{argb:'FFC8E6C9'}}, right:{style:'thin',color:{argb:'FFC8E6C9'}} };
+    const bdrHd = { top:{style:'thin',color:{argb:'FF81C784'}}, bottom:{style:'thin',color:{argb:'FF81C784'}}, left:{style:'thin',color:{argb:'FF81C784'}}, right:{style:'thin',color:{argb:'FF81C784'}} };
+
+    const setRow = (row, values, fgColor, bgColor, bold, size, hAlign, border, wrapText) => {
+      values.forEach((v, i) => {
+        const cell = row.getCell(i + 1);
+        cell.value = v;
+        cell.font = { name:'Arial', bold:!!bold, color:{argb:'FF'+fgColor}, size: size||10 };
+        cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+bgColor} };
+        cell.alignment = { horizontal: hAlign||'center', vertical:'middle', wrapText:!!wrapText };
+        cell.border = border || bdr;
+      });
+    };
+
+    // ── 第1列：幼兒園名稱 ──
+    const r1 = ws.addRow([school,'','','','','']);
+    ws.mergeCells(`A1:F1`);
+    setRow(r1, [school], C.titleFg, C.titleBg, true, 16, 'center', bdrHd);
+    r1.height = 36;
+
+    // ── 第2列：年月副標題 ──
+    const r2 = ws.addRow([`${rocYear} 年 ${month} 月份　餐點表`,'','','','','']);
+    ws.mergeCells(`A2:F2`);
+    setRow(r2, [`${rocYear} 年 ${month} 月份　餐點表`], C.titleFg, C.subBg, true, 13, 'center', bdrHd);
+    r2.height = 28;
+
+    // ── 第3列：欄位標題 ──
+    const r4 = ws.addRow(['日期','星期','上午點心','午　　餐','下午點心','食　材　內　容']);
+    r4.eachCell(cell => {
+      cell.font = { name:'Arial', bold:true, size:11, color:{argb:'FF'+C.hdrFg} };
+      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.hdrBg} };
+      cell.alignment = { horizontal:'center', vertical:'middle' };
+      cell.border = bdrHd;
+    });
+    r4.height = 22;
+    ws.views = [{ state:'frozen', ySplit:3 }];
+
+    // ── 資料列 ──
+    let alt = 0;
+    let rowIdx = 4;
+
+    days.forEach(d => {
+      const dayLabel = `${month}月${d.day}日`;
+
+      if (d.type === 'weekend') {
+        const r = ws.addRow([dayLabel, d.dayName, '放　假', '', '', '']);
+        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
+        r.eachCell(cell => {
+          cell.font = { name:'Arial', size:10, color:{argb:'FF'+C.wkdFg} };
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.wkdBg} };
+          cell.alignment = { horizontal:'center', vertical:'middle' };
+          cell.border = bdr;
+        });
+        r.getCell(3).alignment = { horizontal:'center', vertical:'middle' };
+        r.height = 18;
+        rowIdx++;
+        return;
+      }
+
+      if (d.type === 'holiday') {
+        const r = ws.addRow([dayLabel, d.dayName, `${d.holName}（放假）`, '', '', '']);
+        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
+        r.eachCell(cell => {
+          cell.font = { name:'Arial', bold:true, size:11, color:{argb:'FF'+C.holFg} };
+          cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.holBg} };
+          cell.alignment = { horizontal:'center', vertical:'middle' };
+          cell.border = bdr;
+        });
+        r.height = 22;
+        rowIdx++;
+        return;
+      }
+
+      // 一般工作日
+      const rowBg = alt % 2 === 0 ? C.row1 : C.row2;
+      alt++;
+
+      const l = d.lunch || {};
+      const amText = d.amIsDairy
+        ? `【乳製品】\n${d.amSnack ? d.amSnack.name : ''}`
+        : (d.amSnack ? d.amSnack.name : '—');
+
+      let lunchText = '';
+      let ingItems = [];
+      if (l.type === 'special') {
+        lunchText = `${l.main ? l.main.name : '—'}\n${l.soup ? l.soup.name : '—'}`;
+        ingItems = [d.amSnack, l.main, l.soup, d.pmSnack];
+      } else {
+        lunchText = [l.main, l.meat, l.veg, l.beanEgg, l.soup]
+          .filter(Boolean).map(x => x.name).join('\n');
+        ingItems = [d.amSnack, l.main, l.meat, l.veg, l.beanEgg, l.soup, d.pmSnack];
+      }
+
+      const pmText = `${d.pmSnack ? d.pmSnack.name : '—'}\n季節水果`;
+
+      const seen = new Set(); const ingList = [];
+      ingItems.forEach(it => {
+        if (!it || !it.ingredients) return;
+        it.ingredients.split('、').forEach(i => {
+          i = i.trim();
+          if (i && !seen.has(i)) { seen.add(i); ingList.push(i); }
+        });
+      });
+
+      const r = ws.addRow([dayLabel, d.dayName, amText, lunchText, pmText, ingList.join('、')]);
+
+      // 日期、星期
+      [1,2].forEach(ci => {
+        const cell = r.getCell(ci);
+        cell.font = { name:'Arial', size:10, color:{argb:'FF333333'} };
+        cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg} };
+        cell.alignment = { horizontal:'center', vertical:'top' };
+        cell.border = bdr;
+      });
+
+      // 上午點心、午餐、下午點心
+      [3,4,5].forEach(ci => {
+        const cell = r.getCell(ci);
+        cell.font = { name:'Arial', size:10, color:{argb:'FF333333'} };
+        cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg} };
+        cell.alignment = { horizontal:'left', vertical:'top', wrapText:true, indent:1 };
+        cell.border = bdr;
+      });
+
+      // 食材欄
+      const ingCell = r.getCell(6);
+      ingCell.font = { name:'Arial', size:9, color:{argb:'FF'+C.ingFg} };
+      ingCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.ingBg} };
+      ingCell.alignment = { horizontal:'left', vertical:'top', wrapText:true, indent:1 };
+      ingCell.border = bdr;
+
+      // 列高依午餐行數
+      const lineCount = lunchText.split('\n').length;
+      r.height = Math.max(lineCount * 18, 54);
+      rowIdx++;
+    });
+
+    // ── 備註列 ──
+    const rNote = ws.addRow(['※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。','','','','','']);
+    ws.mergeCells(`A${rowIdx}:F${rowIdx}`);
+    const noteCell = rNote.getCell(1);
+    noteCell.value = '※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。';
+    noteCell.font = { name:'Arial', size:9, italic:true, color:{argb:'FF'+C.noteFg} };
+    noteCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.noteBg} };
+    noteCell.alignment = { horizontal:'left', vertical:'middle', indent:1 };
+    noteCell.border = bdr;
+    rNote.height = 20;
+
+    // ── 下載 ──
+    const buf = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${school}_${rocYear}年${month}月份_餐點表.xlsx`;
+    a.click();
+
+    showMsg('generateMsg', '✅ Excel 已產生，開始下載！', 'success');
+
+  } catch(e) {
+    showMsg('generateMsg', '❌ 匯出失敗：' + e.message, 'error');
+  } finally {
+    document.getElementById('btnExport').disabled = false;
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 儲存歷史菜單
+// ══════════════════════════════════════════════════════════
+async function saveToHistory() {
+  if (!generatedMenu) return;
+  const { adYear, month } = generatedMenu;
+  const yearMonth = `${adYear}-${String(month).padStart(2,'0')}`;
+  const rocYear = generatedMenu.rocYear;
+
+  // 先查詢該月是否已有資料
+  showLoading('確認歷史資料⋯');
+  try {
+    const check = await apiFetch({ action:'getHistory', yearMonth });
+    hideLoading();
+    if (!check.error && check.length > 0) {
+      // 已有資料，跳出確認
+      const confirmed = confirm(
+        `${rocYear}年${month}月份 已有 ${check.length} 筆歷史記錄。\n\n` +
+        `重新儲存將會覆蓋舊資料，確定要繼續嗎？`
+      );
+      if (!confirmed) return;
+    }
+  } catch(e) {
+    hideLoading();
+    // 查詢失敗就直接繼續儲存
+  }
+
+  const histRows = generatedMenu.days
+    .filter(d => d.type !== 'weekend' && d.type !== 'holiday')
+    .map(d => {
+      const l = d.lunch || {};
+      return {
+        date:          d.date,
+        weekday:       d.dayName,
+        morningSnack:  d.amIsDairy ? (d.amSnack ? `乳製品｜${d.amSnack.name}` : '') : (d.amSnack ? d.amSnack.name : ''),
+        lunchMain:     l.main    ? l.main.name    : '',
+        lunchMeat:     l.meat    ? l.meat.name    : '',
+        lunchVeg:      l.veg     ? l.veg.name     : '',
+        lunchBeanEgg:  l.beanEgg ? l.beanEgg.name : '',
+        lunchSoup:     l.soup    ? l.soup.name    : '',
+        afternoonSnack:d.pmSnack ? d.pmSnack.name : '',
+      };
+    });
+
+  showLoading('儲存歷史菜單⋯');
+  try {
+    const data = JSON.stringify({ yearMonth, rows: histRows });
+    const res = await apiFetch({ action:'saveHistory', data });
+    if (res.error) throw new Error(res.error);
+    showMsg('generateMsg', `✅ 已儲存 ${res.count} 筆資料至歷史菜單！`, 'success');
+  } catch(e) {
+    showMsg('generateMsg', '❌ 儲存失敗：' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 餐點資料庫
+// ══════════════════════════════════════════════════════════
+function renderDb() {
+  if (!dbData) return;
+  const filter = document.getElementById('filterCat').value;
+  const cats = filter === 'all' ? Object.keys(CAT_LABEL) : [filter];
+  const tbody = document.getElementById('dbTable');
+  let html = `<thead><tr>
+    <th>餐別</th><th>品項名稱</th><th>食材內容</th><th>備註</th><th style="width:60px">狀態</th><th style="width:60px"></th>
+  </tr></thead><tbody>`;
+  let total = 0;
+  cats.forEach(cat => {
+    const items = dbData[cat] || [];
+    items.forEach(item => {
+      const extra = getItemExtra(cat, item);
+      html += `<tr>
+        <td><span class="badge badge-on">${CAT_LABEL[cat]}</span></td>
+        <td style="font-weight:600">${item.name}</td>
+        <td style="font-size:11px;color:var(--text2)">${item.ingredients || ''}</td>
+        <td>${extra}</td>
+        <td><span class="badge badge-on">啟用</span></td>
+        <td><button class="btn btn-sm btn-danger" onclick="disableItem('${cat}','${item.name}')">停用</button></td>
+      </tr>`;
+      total++;
+    });
+  });
+  html += '</tbody>';
+  tbody.innerHTML = html;
+  document.getElementById('dbCount').textContent = `共 ${total} 筆`;
+}
+
+function getItemExtra(cat, item) {
+  const parts = [];
+  if (cat === 'morning_snack' || cat === 'afternoon_snack') {
+    if (item.category) parts.push(`<span class="badge" style="background:#F3E5F5;color:#6A1B9A">${item.category}</span>`);
+    if (item.taste) parts.push(`<span class="badge" style="background:#E8EAF6;color:#283593">${item.taste}</span>`);
+    if (item.highFat) parts.push(`<span class="badge badge-warn">高油糖鹽</span>`);
+  }
+  if (cat === 'lunch_main' && item.wholegrain) parts.push(`<span class="badge badge-on">未精製</span>`);
+  if (cat === 'lunch_meat') {
+    const cls = item.meatType==='豬'?'badge-meat-pig':item.meatType==='雞'?'badge-meat-chicken':'badge-meat-seafood';
+    if (item.meatType) parts.push(`<span class="badge ${cls}">${item.meatType}</span>`);
+    if (item.semiProcessed) parts.push(`<span class="badge badge-semi">半成品</span>`);
+  }
+  if (cat === 'lunch_veg') {
+    if (item.darkColor) parts.push(`<span class="badge badge-dark">深色</span>`);
+    if (item.season) parts.push(`<span class="badge" style="background:#E8F5E9;color:#2E7D32">${item.season}</span>`);
+  }
+  if (cat === 'lunch_bean_egg') {
+    const cls = item.beanType==='豆製品'?'badge-bean':'badge-egg';
+    if (item.beanType) parts.push(`<span class="badge ${cls}">${item.beanType}</span>`);
+  }
+  return parts.join(' ');
+}
+
+async function addItem() {
+  const cat  = document.getElementById('addCat').value;
+  const name = document.getElementById('addName').value.trim();
+  const ing  = document.getElementById('addIng').value.trim();
+  if (!name) { showMsg('addMsg','請輸入品項名稱','error'); return; }
+  showLoading('新增品項⋯');
+  try {
+    const rowData = [
+      (dbData[cat]||[]).length + 1,
+      name, ing, '', '', '啟用'
+    ];
+    const res = await apiPost({ action:'addItem', sheetKey:cat, rowData });
+    if (res.error) throw new Error(res.error);
+    // 更新本地資料
+    if (!dbData[cat]) dbData[cat] = [];
+    dbData[cat].push({ name, ingredients:ing });
+    document.getElementById('addName').value = '';
+    document.getElementById('addIng').value = '';
+    showMsg('addMsg',`✅ 已新增：${name}`,'success');
+    renderDb();
+  } catch(e) {
+    showMsg('addMsg','❌ 新增失敗：'+e.message,'error');
+  }
+  hideLoading();
+}
+
+async function disableItem(cat, name) {
+  if (!confirm(`確定要停用「${name}」嗎？`)) return;
+  showLoading('更新狀態⋯');
+  try {
+    const res = await apiPost({ action:'updateStatus', sheetKey:cat, itemName:name, status:'停用' });
+    if (res.error) throw new Error(res.error);
+    dbData[cat] = (dbData[cat]||[]).filter(it => it.name !== name);
+    renderDb();
+    showMsg('addMsg',`已停用：${name}`,'success');
+  } catch(e) {
+    showMsg('addMsg','❌ 操作失敗：'+e.message,'error');
+  }
+  hideLoading();
+}
+
+// ══════════════════════════════════════════════════════════
+// 假日設定
+// ══════════════════════════════════════════════════════════
+function renderHolidays() {
+  if (!dbData) return;
+  const tbody = document.getElementById('hdTable');
+  const hols = dbData.holidays || [];
+  if (!hols.length) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:20px">尚無假日設定</td></tr>';
+    return;
+  }
+  let html = `<thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody>`;
+  hols.forEach(h => {
+    const cls = h.type === '補班日' ? 'badge' : 'badge badge-warn';
+    const bg  = h.type === '補班日' ? 'background:#E8EAF6;color:#283593' : '';
+    html += `<tr>
+      <td>${h.date}</td>
+      <td style="font-weight:600">${h.name}</td>
+      <td><span class="${cls}" style="${bg}">${h.type}</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday('${h.date}')">刪除</button></td>
+    </tr>`;
+  });
+  html += '</tbody>';
+  tbody.innerHTML = html;
+}
+
+async function addHoliday() {
+  const date = document.getElementById('hdDate').value.trim();
+  const name = document.getElementById('hdName').value.trim();
+  const type = document.getElementById('hdType').value;
+  if (!date || !name) { showMsg('hdMsg','請填寫日期與名稱','error'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { showMsg('hdMsg','日期格式應為 YYYY-MM-DD','error'); return; }
+  showLoading('新增假日⋯');
+  try {
+    const res = await apiPost({ action:'addHoliday', name, date, type });
+    if (res.error) throw new Error(res.error);
+    if (!dbData.holidays) dbData.holidays = [];
+    dbData.holidays.push({ name, date, type });
+    dbData.holidays.sort((a,b) => a.date.localeCompare(b.date));
+    document.getElementById('hdDate').value = '';
+    document.getElementById('hdName').value = '';
+    showMsg('hdMsg',`✅ 已新增：${name}（${type}）`,'success');
+    renderHolidays();
+  } catch(e) {
+    showMsg('hdMsg','❌ 新增失敗：'+e.message,'error');
+  }
+  hideLoading();
+}
+
+async function deleteHoliday(date) {
+  if (!confirm(`確定要刪除 ${date} 的假日設定嗎？`)) return;
+  showLoading('刪除假日⋯');
+  try {
+    const res = await apiPost({ action:'deleteHoliday', date });
+    if (res.error) throw new Error(res.error);
+    dbData.holidays = (dbData.holidays||[]).filter(h => h.date !== date);
+    showMsg('hdMsg','✅ 已刪除','success');
+    renderHolidays();
+  } catch(e) {
+    showMsg('hdMsg','❌ 刪除失敗：'+e.message,'error');
+  }
+  hideLoading();
+}
+
+// ══════════════════════════════════════════════════════════
+// 歷史菜單
+// ══════════════════════════════════════════════════════════
+async function loadHistory() {
+  const rocYear = parseInt(document.getElementById('histYear').value);
+  const adYear  = rocYear + 1911;
+  const month   = document.getElementById('histMonth').value; // 已是 01~12 格式
+  const ym      = `${adYear}-${month}`;
+  showLoading('載入歷史菜單⋯');
+  try {
+    const res = await apiFetch({ action:'getHistory', yearMonth:ym });
+    if (res.error) throw new Error(res.error);
+    historyData = { yearMonth:ym, rows:res };
+    const area = document.getElementById('historyArea');
+    if (!res.length) {
+      area.innerHTML = '<div class="msg msg-warn">此月份尚無歷史記錄</div>';
+      document.getElementById('btnDlHistory').style.display = 'none';
+    } else {
+      let html = `<div style="font-size:13px;color:var(--text2);margin-bottom:8px">共 ${res.length} 筆記錄</div>`;
+      html += `<div class="menu-wrap"><table class="menu-table"><thead><tr>
+        <th>日期</th><th>星期</th><th>上午點心</th><th>午餐主食</th><th>肉類</th><th>青菜</th><th>豆蛋</th><th>湯品</th><th>下午點心</th>
+      </tr></thead><tbody>`;
+      res.forEach(r => {
+        html += `<tr class="row-work">
+          <td style="text-align:center">${r.date}</td>
+          <td style="text-align:center">${r.weekday}</td>
+          <td>${r.morningSnack||''}</td><td>${r.lunchMain||''}</td>
+          <td>${r.lunchMeat||''}</td><td>${r.lunchVeg||''}</td>
+          <td>${r.lunchBeanEgg||''}</td><td>${r.lunchSoup||''}</td>
+          <td>${r.afternoonSnack||''}</td>
+        </tr>`;
+      });
+      html += '</tbody></table></div>';
+      area.innerHTML = html;
+      document.getElementById('btnDlHistory').style.display = '';
+    }
+  } catch(e) {
+    document.getElementById('historyArea').innerHTML = `<div class="msg msg-error">載入失敗：${e.message}</div>`;
+  }
+  hideLoading();
+}
+
+async function downloadHistory() {
+  if (!historyData || !historyData.rows.length) return;
+
+  showLoading('產生 Excel 中⋯');
+
+  try {
+    // 動態載入 ExcelJS
+    if (typeof ExcelJS === 'undefined') {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    // 從 yearMonth 取得年月資訊
+    const [adYear, monthPadded] = historyData.yearMonth.split('-');
+    const month = parseInt(monthPadded);
+    const rocYear = parseInt(adYear) - 1911;
+    const school = document.getElementById('schoolName').value || '小鳥幼兒園';
+
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet(`${rocYear}年${month}月`);
+
+    // 欄寬
+    ws.columns = [
+      {width:10},{width:6},{width:18},{width:36},{width:22},{width:44}
+    ];
+
+    const C = {
+      titleBg:'2E7D32', titleFg:'FFFFFF', subBg:'388E3C',
+      hdrBg:'A5D6A7', hdrFg:'1B5E20',
+      holBg:'FFCDD2', holFg:'B71C1C',
+      wkdBg:'F5F5F5', wkdFg:'9E9E9E',
+      row1:'FFFFFF', row2:'F1F8E9',
+      ingBg:'E8F5E9', ingFg:'2E7D32',
+      noteFg:'757575', noteBg:'FAFAFA',
+    };
+    const bdr  = {top:{style:'thin',color:{argb:'FFC8E6C9'}},bottom:{style:'thin',color:{argb:'FFC8E6C9'}},left:{style:'thin',color:{argb:'FFC8E6C9'}},right:{style:'thin',color:{argb:'FFC8E6C9'}}};
+    const bdrHd= {top:{style:'thin',color:{argb:'FF81C784'}},bottom:{style:'thin',color:{argb:'FF81C784'}},left:{style:'thin',color:{argb:'FF81C784'}},right:{style:'thin',color:{argb:'FF81C784'}}};
+
+    const setCell = (cell, val, fontColor, bgColor, bold, size, hAlign, border, wrap) => {
+      cell.value = val;
+      cell.font = {name:'Arial', bold:!!bold, color:{argb:'FF'+fontColor}, size:size||10};
+      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+bgColor}};
+      cell.alignment = {horizontal:hAlign||'center', vertical:'middle', wrapText:!!wrap};
+      cell.border = border || bdr;
+    };
+
+    // 第1列：幼兒園名稱
+    const r1 = ws.addRow([school,'','','','','']);
+    ws.mergeCells('A1:F1');
+    setCell(r1.getCell(1), school, C.titleFg, C.titleBg, true, 16, 'center', bdrHd);
+    r1.height = 36;
+
+    // 第2列：年月副標題
+    const r2 = ws.addRow([`${rocYear} 年 ${month} 月份　餐點表`,'','','','','']);
+    ws.mergeCells('A2:F2');
+    setCell(r2.getCell(1), `${rocYear} 年 ${month} 月份　餐點表`, C.titleFg, C.subBg, true, 13, 'center', bdrHd);
+    r2.height = 28;
+
+    // 第3列：欄位標題
+    const r3 = ws.addRow(['日期','星期','上午點心','午　　餐','下午點心','食　材　內　容']);
+    r3.eachCell(cell => {
+      cell.font = {name:'Arial', bold:true, size:11, color:{argb:'FF'+C.hdrFg}};
+      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.hdrBg}};
+      cell.alignment = {horizontal:'center', vertical:'middle'};
+      cell.border = bdrHd;
+    });
+    r3.height = 22;
+    ws.views = [{state:'frozen', ySplit:3}];
+
+    // 資料列
+    let alt = 0;
+    let rowIdx = 4;
+
+    historyData.rows.forEach(r => {
+      const date   = r.date || '';
+      const wkday  = r.weekday || '';
+
+      // 判斷是否為六日或假日
+      const isWkd  = (wkday === '六' || wkday === '日');
+      const isHol  = r.morningSnack === '' && r.lunchMain === '' && !isWkd && wkday !== '';
+
+      // 從 date 取月日
+      let dayLabel = date;
+      if (date && date.includes('-')) {
+        const parts = date.split('-');
+        if (parts.length === 3) dayLabel = `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
+      }
+
+      if (isWkd) {
+        const row = ws.addRow([dayLabel, wkday, '放　假', '', '', '']);
+        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
+        row.eachCell(cell => {
+          cell.font = {name:'Arial', size:10, color:{argb:'FF'+C.wkdFg}};
+          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.wkdBg}};
+          cell.alignment = {horizontal:'center', vertical:'middle'};
+          cell.border = bdr;
+        });
+        row.height = 18;
+
+      } else {
+        const rowBg = alt % 2 === 0 ? C.row1 : C.row2;
+        alt++;
+
+        // 組合午餐文字
+        const lunchText = [r.lunchMain, r.lunchMeat, r.lunchVeg, r.lunchBeanEgg, r.lunchSoup]
+          .filter(Boolean).join('\n');
+        const pmText = r.afternoonSnack || '';
+
+        const exRow = ws.addRow([dayLabel, wkday, r.morningSnack||'', lunchText, pmText, '']);
+
+        [1,2].forEach(ci => {
+          const cell = exRow.getCell(ci);
+          cell.font = {name:'Arial', size:10, color:{argb:'FF333333'}};
+          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg}};
+          cell.alignment = {horizontal:'center', vertical:'top'};
+          cell.border = bdr;
+        });
+        [3,4,5].forEach(ci => {
+          const cell = exRow.getCell(ci);
+          cell.font = {name:'Arial', size:10, color:{argb:'FF333333'}};
+          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg}};
+          cell.alignment = {horizontal:'left', vertical:'top', wrapText:true, indent:1};
+          cell.border = bdr;
+        });
+        // 食材欄留空（歷史資料沒有食材）
+        const ingCell = exRow.getCell(6);
+        ingCell.font = {name:'Arial', size:9, color:{argb:'FF'+C.ingFg}};
+        ingCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.ingBg}};
+        ingCell.alignment = {horizontal:'left', vertical:'top', wrapText:true, indent:1};
+        ingCell.border = bdr;
+
+        const lineCount = lunchText.split('\n').length;
+        exRow.height = Math.max(lineCount * 18, 54);
+      }
+      rowIdx++;
+    });
+
+    // 備註列
+    const rNote = ws.addRow(['※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。','','','','','']);
+    ws.mergeCells(`A${rowIdx}:F${rowIdx}`);
+    const noteCell = rNote.getCell(1);
+    noteCell.value = '※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。';
+    noteCell.font = {name:'Arial', size:9, italic:true, color:{argb:'FF'+C.noteFg}};
+    noteCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.noteBg}};
+    noteCell.alignment = {horizontal:'left', vertical:'middle', indent:1};
+    noteCell.border = bdr;
+    rNote.height = 20;
+
+    // 下載
+    const buf  = await wb.xlsx.writeBuffer();
+    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const a    = document.createElement('a');
+    a.href     = URL.createObjectURL(blob);
+    a.download = `${school}_${rocYear}年${month}月份_餐點表.xlsx`;
+    a.click();
+
+    showMsg('generateMsg', '✅ 歷史菜單 Excel 已下載！', 'success');
+
+  } catch(e) {
+    showMsg('generateMsg', '❌ 下載失敗：' + e.message, 'error');
+  } finally {
+    hideLoading();
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// 設定
+// ══════════════════════════════════════════════════════════
+async function testConnection() {
+  showLoading('測試連線⋯');
+  try {
+    const res = await apiFetch({ action:'getAll' });
+    if (res.error) throw new Error(res.error);
+    showMsg('settingMsg','✅ 連線成功！資料庫已讀取。','success');
+  } catch(e) {
+    showMsg('settingMsg','❌ 連線失敗：'+e.message,'error');
+  }
+  hideLoading();
+}
+
+// ══════════════════════════════════════════════════════════
+// 啟動
+// ══════════════════════════════════════════════════════════
+window.addEventListener('load', initApp);
+</script>
+
+
+</body></html>
