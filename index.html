@@ -675,27 +675,38 @@ async function generateMenu() {
     const isFri = (d.type === 'fri');
     const isMonday = (d.dow === 1);
 
-    // 上午點心：週一優先安排乳製品
-    let amSnack, amIsDairy = false;
+    // 上午點心：正常從資料庫挑選
+    const amPool = (dbData.morning_snack || []).filter(it => {
+      if (weekHighFat >= 1 && it.highFat) return false;
+      // 避免前一天上午同性質
+      if (prevAmCat && it.category === prevAmCat) return false;
+      // 避免前一天上午同甜鹹
+      if (prevAmTaste === '甜' && it.taste === '甜') return false;
+      return true;
+    });
+    const amSnack = pickFrom(amPool.length ? amPool : (dbData.morning_snack||[]), usedAmSnack, 20);
+    if (amSnack && amSnack.highFat) weekHighFat++;
+
+    // 乳製品：額外附加（不取代點心）
+    // 只在週一且點心是麵包糕點類時搭配，避免搭配粥、麵等
+    let dairyItem = null;
     const dairyItems = (dbData.dairy || []);
-    if (!weekDairyDone && (isMonday || d.dow === 2)) {
-      if (dairyItems.length > 0) {
-        amSnack = dairyItems[Math.floor(Math.random() * dairyItems.length)];
-        amIsDairy = true;
+    const DAIRY_OK_CATS = ['麵包糕點類']; // 適合搭配乳製品的點心類別
+    if (!weekDairyDone && isMonday && dairyItems.length > 0) {
+      const amCatOk = amSnack && DAIRY_OK_CATS.includes(amSnack.category);
+      if (amCatOk) {
+        dairyItem = dairyItems[Math.floor(Math.random() * dairyItems.length)];
         weekDairyDone = true;
       }
     }
-    if (!amSnack) {
-      const amPool = (dbData.morning_snack || []).filter(it => {
-        if (weekHighFat >= 1 && it.highFat) return false;
-        // 避免前一天上午同性質
-        if (prevAmCat && it.category === prevAmCat) return false;
-        // 避免前一天上午同甜鹹
-        if (prevAmTaste === '甜' && it.taste === '甜') return false;
-        return true;
-      });
-      amSnack = pickFrom(amPool.length ? amPool : (dbData.morning_snack||[]), usedAmSnack, 20);
-      if (amSnack && amSnack.highFat) weekHighFat++;
+    // 若週一點心不適合搭配，往後找適合的一天
+    if (!weekDairyDone && !isMonday && dairyItems.length > 0) {
+      const amCatOk = amSnack && DAIRY_OK_CATS.includes(amSnack.category);
+      // 週三之後還沒安排的話，不管類別強制搭配
+      if (amCatOk || d.dow >= 3) {
+        dairyItem = dairyItems[Math.floor(Math.random() * dairyItems.length)];
+        weekDairyDone = true;
+      }
     }
 
     // 下午點心：確保甜鹹不同日同甜，性質不同類，且避免前後天重複
@@ -766,7 +777,7 @@ async function generateMenu() {
       lunch = { type:'normal', main, meat, veg, beanEgg, soup };
     }
 
-    return { ...d, amSnack, amIsDairy, pmSnack, lunch };
+    return { ...d, amSnack, dairyItem, pmSnack, lunch };
   });
 
   generatedMenu = { rocYear, month, adYear, school, days: menuDays };
@@ -821,7 +832,7 @@ function renderMenuTable(menu) {
     }
 
     const l = d.lunch;
-    const amText = d.amSnack ? d.amSnack.name : '—';
+    const amText = (d.amSnack ? d.amSnack.name : '—') + (d.dairyItem ? `＋${d.dairyItem.name}` : '');
 
     let lunchText = '';
     let ingItems = [];
@@ -931,7 +942,7 @@ function exportPdf() {
     alt++;
 
     const l = d.lunch || {};
-    const amText = d.amSnack ? d.amSnack.name : '—';
+    const amText = (d.amSnack ? d.amSnack.name : '—') + (d.dairyItem ? `＋${d.dairyItem.name}` : '');
 
     let lunchText = '';
     if (l.type === 'special') {
@@ -1102,7 +1113,7 @@ async function exportExcel() {
       alt++;
 
       const l = d.lunch || {};
-      const amText = d.amSnack ? d.amSnack.name : '—';
+      const amText = (d.amSnack ? d.amSnack.name : '—') + (d.dairyItem ? `＋${d.dairyItem.name}` : '');
 
       let lunchText = '';
       let ingItems = [];
@@ -1222,7 +1233,7 @@ async function saveToHistory() {
       return {
         date:          d.date,
         weekday:       d.dayName,
-        morningSnack:  d.amSnack ? d.amSnack.name : '',
+        morningSnack:  (d.amSnack ? d.amSnack.name : '') + (d.dairyItem ? `＋${d.dairyItem.name}` : ''),
         lunchMain:     l.main    ? l.main.name    : '',
         lunchMeat:     l.meat    ? l.meat.name    : '',
         lunchVeg:      l.veg     ? l.veg.name     : '',
