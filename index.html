@@ -688,24 +688,33 @@ async function generateMenu() {
     if (amSnack && amSnack.highFat) weekHighFat++;
 
     // 乳製品：額外附加（不取代點心）
-    // 只在週一且點心是麵包糕點類時搭配，避免搭配粥、麵等
+    // 排除粥飯麵食類和甜湯類，其他類別都可以搭配
     let dairyItem = null;
     const dairyItems = (dbData.dairy || []);
-    const DAIRY_OK_CATS = ['麵包糕點類']; // 適合搭配乳製品的點心類別
+    const DAIRY_EXCLUDE_CATS = ['粥飯麵食類', '甜湯類']; // 不適合搭配乳製品的類別
+    const dairyOkForSnack = (snack) => {
+      if (!snack) return false;
+      const cat = snack.category || '';
+      return !DAIRY_EXCLUDE_CATS.includes(cat);
+    };
+
+    // DEBUG
+    console.log(`${d.date} dow=${d.dow} weekDairyDone=${weekDairyDone} snack=${amSnack?.name} cat=${amSnack?.category} dairyOk=${dairyOkForSnack(amSnack)} dairyItems=${dairyItems.length}`);
+
     if (!weekDairyDone && isMonday && dairyItems.length > 0) {
-      const amCatOk = amSnack && DAIRY_OK_CATS.includes(amSnack.category);
-      if (amCatOk) {
+      if (dairyOkForSnack(amSnack)) {
         dairyItem = dairyItems[Math.floor(Math.random() * dairyItems.length)];
         weekDairyDone = true;
+        console.log(`✅ 週一安排乳製品：${dairyItem.name} 搭配 ${amSnack?.name}`);
+      } else {
+        console.log(`⚠️ 週一點心不適合搭配乳製品：${amSnack?.name} cat=${amSnack?.category}`);
       }
     }
-    // 若週一點心不適合搭配，往後找適合的一天
     if (!weekDairyDone && !isMonday && dairyItems.length > 0) {
-      const amCatOk = amSnack && DAIRY_OK_CATS.includes(amSnack.category);
-      // 週三之後還沒安排的話，不管類別強制搭配
-      if (amCatOk || d.dow >= 3) {
+      if (dairyOkForSnack(amSnack) || d.dow >= 3) {
         dairyItem = dairyItems[Math.floor(Math.random() * dairyItems.length)];
         weekDairyDone = true;
+        console.log(`✅ 非週一安排乳製品：${dairyItem.name} 搭配 ${amSnack?.name}`);
       }
     }
 
