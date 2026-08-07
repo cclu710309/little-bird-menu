@@ -366,7 +366,7 @@ select:focus, input:focus { outline: 2px solid var(--green-l); border-color: var
         <option value="放假日">放假日</option>
         <option value="補班日">補班日</option>
       </select>
-      <button class="btn btn-primary" id="btnAddHoliday">新增</button>
+      <button class="btn btn-primary" onclick="window.addHoliday()">新增</button>
     </div>
     <div id="hdMsg"></div>
   </div>
@@ -1685,29 +1685,27 @@ async function testConnection() {
 // ══════════════════════════════════════════════════════════
 // 啟動
 // ══════════════════════════════════════════════════════════
-// 確保所有函式都在全域 scope
-window.addHoliday = addHoliday;
-window.deleteHoliday = deleteHoliday;
-window.showTab = showTab;
-window.generateMenu = generateMenu;
-window.exportExcel = exportExcel;
-window.exportPdf = exportPdf;
-window.saveToHistory = saveToHistory;
-window.addItem = addItem;
-window.disableItem = disableItem;
-window.renderDb = renderDb;
-window.renderHolidays = renderHolidays;
-window.loadHistory = loadHistory;
-window.downloadHistory = downloadHistory;
-window.testConnection = testConnection;
-window.editCell = editCell;
-window.initApp = initApp;
-
 window.addEventListener('load', function() {
   initApp();
+  // 假日新增按鈕事件
   var btnAdd = document.getElementById('btnAddHoliday');
-  if (btnAdd) btnAdd.addEventListener('click', window.addHoliday);
+  if (btnAdd) btnAdd.addEventListener('click', addHoliday);
 });
+// 確保函式在全域可存取
+window.addHoliday    = addHoliday;
+window.deleteHoliday = deleteHoliday;
+window.showTab       = showTab;
+window.generateMenu  = generateMenu;
+window.exportExcel   = exportExcel;
+window.exportPdf     = exportPdf;
+window.saveToHistory = saveToHistory;
+window.addItem       = addItem;
+window.disableItem   = disableItem;
+window.renderDb      = renderDb;
+window.loadHistory   = loadHistory;
+window.downloadHistory = downloadHistory;
+window.testConnection  = testConnection;
+window.editCell      = editCell;
 </script>
 </body>
 </html>
