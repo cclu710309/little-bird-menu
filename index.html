@@ -1685,11 +1685,28 @@ async function testConnection() {
 // ══════════════════════════════════════════════════════════
 // 啟動
 // ══════════════════════════════════════════════════════════
+// 確保所有函式都在全域 scope
+window.addHoliday = addHoliday;
+window.deleteHoliday = deleteHoliday;
+window.showTab = showTab;
+window.generateMenu = generateMenu;
+window.exportExcel = exportExcel;
+window.exportPdf = exportPdf;
+window.saveToHistory = saveToHistory;
+window.addItem = addItem;
+window.disableItem = disableItem;
+window.renderDb = renderDb;
+window.renderHolidays = renderHolidays;
+window.loadHistory = loadHistory;
+window.downloadHistory = downloadHistory;
+window.testConnection = testConnection;
+window.editCell = editCell;
+window.initApp = initApp;
+
 window.addEventListener('load', function() {
   initApp();
-  // 假日新增按鈕事件
   var btnAdd = document.getElementById('btnAddHoliday');
-  if (btnAdd) btnAdd.addEventListener('click', addHoliday);
+  if (btnAdd) btnAdd.addEventListener('click', window.addHoliday);
 });
 </script>
 </body>
