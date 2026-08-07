@@ -366,7 +366,7 @@ select:focus, input:focus { outline: 2px solid var(--green-l); border-color: var
         <option value="放假日">放假日</option>
         <option value="補班日">補班日</option>
       </select>
-      <button class="btn btn-primary" onclick="addHoliday()">新增</button>
+      <button class="btn btn-primary" id="btnAddHoliday">新增</button>
     </div>
     <div id="hdMsg"></div>
   </div>
@@ -1406,11 +1406,17 @@ function renderHolidays() {
     html += '<td>' + h.date + '</td>';
     html += '<td style="font-weight:600">' + h.name + '</td>';
     html += '<td><span class="' + cls + '" style="' + bg + '">' + h.type + '</span></td>';
-    html += '<td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(this.dataset.date)" data-date="' + h.date + '">刪除</button></td>';
+    html += '<td><button class="btn btn-sm btn-danger hd-del-btn" data-date="' + h.date + '">刪除</button></td>';
     html += '</tr>';
   });
   html += '</tbody>';
   tbody.innerHTML = html;
+  // 綁定刪除按鈕事件
+  document.querySelectorAll('.hd-del-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      deleteHoliday(this.getAttribute('data-date'));
+    });
+  });
 }
 async function addHoliday() {
   const date = document.getElementById('hdDate').value.trim();
@@ -1679,7 +1685,12 @@ async function testConnection() {
 // ══════════════════════════════════════════════════════════
 // 啟動
 // ══════════════════════════════════════════════════════════
-window.addEventListener('load', initApp);
+window.addEventListener('load', function() {
+  initApp();
+  // 假日新增按鈕事件
+  var btnAdd = document.getElementById('btnAddHoliday');
+  if (btnAdd) btnAdd.addEventListener('click', addHoliday);
+});
 </script>
 </body>
 </html>
