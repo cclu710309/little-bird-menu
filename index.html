@@ -1398,21 +1398,20 @@ function renderHolidays() {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:20px">尚無假日設定</td></tr>';
     return;
   }
-  let html = `<thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody>`;
-  hols.forEach(h => {
+  let html = '<thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody>';
+  hols.forEach(function(h) {
     const cls = h.type === '補班日' ? 'badge' : 'badge badge-warn';
     const bg  = h.type === '補班日' ? 'background:#E8EAF6;color:#283593' : '';
-    html += `<tr>
-      <td>${h.date}</td>
-      <td style="font-weight:600">${h.name}</td>
-      <td><span class="${cls}" style="${bg}">${h.type}</span></td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday('${h.date}')">刪除</button></td>
-    </tr>`;
+    html += '<tr>';
+    html += '<td>' + h.date + '</td>';
+    html += '<td style="font-weight:600">' + h.name + '</td>';
+    html += '<td><span class="' + cls + '" style="' + bg + '">' + h.type + '</span></td>';
+    html += '<td><button class="btn btn-sm btn-danger" onclick="deleteHoliday(this.dataset.date)" data-date="' + h.date + '">刪除</button></td>';
+    html += '</tr>';
   });
   html += '</tbody>';
   tbody.innerHTML = html;
 }
-
 async function addHoliday() {
   const date = document.getElementById('hdDate').value.trim();
   const name = document.getElementById('hdName').value.trim();
