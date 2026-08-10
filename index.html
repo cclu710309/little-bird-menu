@@ -1382,16 +1382,16 @@ function renderHolidays() {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:20px">尚無假日設定</td></tr>';
     return;
   }
-  let html = '<thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody>';
-  hols.forEach(function(h) {
+  let html = `<thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody>`;
+  hols.forEach(h => {
     const cls = h.type === '補班日' ? 'badge' : 'badge badge-warn';
     const bg  = h.type === '補班日' ? 'background:#E8EAF6;color:#283593' : '';
-    html += '<tr>';
-    html += '<td>' + h.date + '</td>';
-    html += '<td style="font-weight:600">' + h.name + '</td>';
-    html += '<td><span class="' + cls + '" style="' + bg + '">' + h.type + '</span></td>';
-    html += '<td><button class="btn btn-sm btn-danger" data-date="' + h.date + '" onclick="window.deleteHoliday(this.dataset.date)">刪除</button></td>';
-    html += '</tr>';
+    html += `<tr>
+      <td>${h.date}</td>
+      <td style="font-weight:600">${h.name}</td>
+      <td><span class="${cls}" style="${bg}">${h.type}</span></td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday('${h.date}')">刪除</button></td>
+    </tr>`;
   });
   html += '</tbody>';
   tbody.innerHTML = html;
@@ -1402,37 +1402,42 @@ window.addHoliday = async function() {
   const name = document.getElementById('hdName').value.trim();
   const type = document.getElementById('hdType').value;
   if (!date || !name) { showMsg('hdMsg','請填寫日期與名稱','error'); return; }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { showMsg('hdMsg','日期格式應為 YYYY-MM-DD','error'); return; }
   showLoading('新增假日⋯');
   try {
-    const res = await apiPost({ action:'addHoliday', name: name, date: date, type: type });
+    const res = await apiPost({ action:'addHoliday', name, date, type });
     if (res.error) throw new Error(res.error);
     if (!dbData.holidays) dbData.holidays = [];
-    dbData.holidays.push({ name: name, date: date, type: type });
-    dbData.holidays.sort(function(a,b) { return a.date.localeCompare(b.date); });
+    dbData.holidays.push({ name, date, type });
+    dbData.holidays.sort((a,b) => a.date.localeCompare(b.date));
     document.getElementById('hdDate').value = '';
     document.getElementById('hdName').value = '';
-    showMsg('hdMsg', '已新增：' + name + '（' + type + '）', 'success');
+    showMsg('hdMsg',`✅ 已新增：${name}（${type}）`,'success');
     renderHolidays();
   } catch(e) {
-    showMsg('hdMsg', '新增失敗：' + e.message, 'error');
+    showMsg('hdMsg','❌ 新增失敗：'+e.message,'error');
   }
   hideLoading();
-};
+}
 
-window.deleteHoliday = async function(date) {
-  if (!confirm('確定要刪除 ' + date + ' 的假日設定嗎？')) return;
+async function deleteHoliday(date) {
+  if (!confirm(`確定要刪除 ${date} 的假日設定嗎？`)) return;
   showLoading('刪除假日⋯');
   try {
-    const res = await apiPost({ action:'deleteHoliday', date: date });
+    const res = await apiPost({ action:'deleteHoliday', date });
     if (res.error) throw new Error(res.error);
-    dbData.holidays = (dbData.holidays||[]).filter(function(h) { return h.date !== date; });
-    showMsg('hdMsg', '已刪除', 'success');
+    dbData.holidays = (dbData.holidays||[]).filter(h => h.date !== date);
+    showMsg('hdMsg','✅ 已刪除','success');
     renderHolidays();
   } catch(e) {
-    showMsg('hdMsg', '刪除失敗：' + e.message, 'error');
+    showMsg('hdMsg','❌ 刪除失敗：'+e.message,'error');
   }
   hideLoading();
-};
+}
+
+// ══════════════════════════════════════════════════════════
+// 歷史菜單
+// ══════════════════════════════════════════════════════════
 async function loadHistory() {
   const rocYear = parseInt(document.getElementById('histYear').value);
   const adYear  = rocYear + 1911;
