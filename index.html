@@ -366,7 +366,7 @@ select:focus, input:focus { outline: 2px solid var(--green-l); border-color: var
         <option value="放假日">放假日</option>
         <option value="補班日">補班日</option>
       </select>
-      <button class="btn btn-primary" onclick="addHoliday()">新增</button>
+      <button class="btn btn-primary" onclick="window.addHoliday()">新增</button>
     </div>
     <div id="hdMsg"></div>
   </div>
@@ -1406,284 +1406,46 @@ function renderHolidays() {
     html += '<td>' + h.date + '</td>';
     html += '<td style="font-weight:600">' + h.name + '</td>';
     html += '<td><span class="' + cls + '" style="' + bg + '">' + h.type + '</span></td>';
-    html += '<td><button class="btn btn-sm btn-danger hd-del-btn" data-date="' + h.date + '">刪除</button></td>';
+    html += '<td><button class="btn btn-sm btn-danger" data-date="' + h.date + '" onclick="window.deleteHoliday(this.dataset.date)">刪除</button></td>';
     html += '</tr>';
   });
   html += '</tbody>';
   tbody.innerHTML = html;
-  // 綁定刪除按鈕事件
-  document.querySelectorAll('.hd-del-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      deleteHoliday(this.getAttribute('data-date'));
-    });
-  });
 }
 
-async function addHoliday() {
+window.addHoliday = async function() {
   const date = document.getElementById('hdDate').value.trim();
   const name = document.getElementById('hdName').value.trim();
   const type = document.getElementById('hdType').value;
   if (!date || !name) { showMsg('hdMsg','請填寫日期與名稱','error'); return; }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { showMsg('hdMsg','日期格式應為 YYYY-MM-DD','error'); return; }
   showLoading('新增假日⋯');
   try {
-    const res = await apiPost({ action:'addHoliday', name, date, type });
+    const res = await apiPost({ action:'addHoliday', name: name, date: date, type: type });
     if (res.error) throw new Error(res.error);
     if (!dbData.holidays) dbData.holidays = [];
-    dbData.holidays.push({ name, date, type });
-    dbData.holidays.sort((a,b) => a.date.localeCompare(b.date));
+    dbData.holidays.push({ name: name, date: date, type: type });
+    dbData.holidays.sort(function(a,b) { return a.date.localeCompare(b.date); });
     document.getElementById('hdDate').value = '';
     document.getElementById('hdName').value = '';
-    showMsg('hdMsg',`✅ 已新增：${name}（${type}）`,'success');
+    showMsg('hdMsg', '已新增：' + name + '（' + type + '）', 'success');
     renderHolidays();
   } catch(e) {
-    showMsg('hdMsg','❌ 新增失敗：'+e.message,'error');
+    showMsg('hdMsg', '新增失敗：' + e.message, 'error');
   }
   hideLoading();
-}
+};
 
-async function deleteHoliday(date) {
-  if (!confirm(`確定要刪除 ${date} 的假日設定嗎？`)) return;
+window.deleteHoliday = async function(date) {
+  if (!confirm('確定要刪除 ' + date + ' 的假日設定嗎？')) return;
   showLoading('刪除假日⋯');
   try {
-    const res = await apiPost({ action:'deleteHoliday', date });
+    const res = await apiPost({ action:'deleteHoliday', date: date });
     if (res.error) throw new Error(res.error);
-    dbData.holidays = (dbData.holidays||[]).filter(h => h.date !== date);
-    showMsg('hdMsg','✅ 已刪除','success');
+    dbData.holidays = (dbData.holidays||[]).filter(function(h) { return h.date !== date; });
+    showMsg('hdMsg', '已刪除', 'success');
     renderHolidays();
   } catch(e) {
-    showMsg('hdMsg','❌ 刪除失敗：'+e.message,'error');
+    showMsg('hdMsg', '刪除失敗：' + e.message, 'error');
   }
   hideLoading();
-}
-
-// ══════════════════════════════════════════════════════════
-// 歷史菜單
-// ══════════════════════════════════════════════════════════
-async function loadHistory() {
-  const rocYear = parseInt(document.getElementById('histYear').value);
-  const adYear  = rocYear + 1911;
-  const month   = document.getElementById('histMonth').value; // 已是 01~12 格式
-  const ym      = `${adYear}-${month}`;
-  showLoading('載入歷史菜單⋯');
-  try {
-    const res = await apiFetch({ action:'getHistory', yearMonth:ym });
-    if (res.error) throw new Error(res.error);
-    historyData = { yearMonth:ym, rows:res };
-    const area = document.getElementById('historyArea');
-    if (!res.length) {
-      area.innerHTML = '<div class="msg msg-warn">此月份尚無歷史記錄</div>';
-      document.getElementById('btnDlHistory').style.display = 'none';
-    } else {
-      let html = `<div style="font-size:13px;color:var(--text2);margin-bottom:8px">共 ${res.length} 筆記錄</div>`;
-      html += `<div class="menu-wrap"><table class="menu-table"><thead><tr>
-        <th>日期</th><th>星期</th><th>上午點心</th><th>午餐主食</th><th>肉類</th><th>青菜</th><th>豆蛋</th><th>湯品</th><th>下午點心</th>
-      </tr></thead><tbody>`;
-      res.forEach(r => {
-        html += `<tr class="row-work">
-          <td style="text-align:center">${r.date}</td>
-          <td style="text-align:center">${r.weekday}</td>
-          <td>${r.morningSnack||''}</td><td>${r.lunchMain||''}</td>
-          <td>${r.lunchMeat||''}</td><td>${r.lunchVeg||''}</td>
-          <td>${r.lunchBeanEgg||''}</td><td>${r.lunchSoup||''}</td>
-          <td>${r.afternoonSnack||''}</td>
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
-      area.innerHTML = html;
-      document.getElementById('btnDlHistory').style.display = '';
-    }
-  } catch(e) {
-    document.getElementById('historyArea').innerHTML = `<div class="msg msg-error">載入失敗：${e.message}</div>`;
-  }
-  hideLoading();
-}
-
-async function downloadHistory() {
-  if (!historyData || !historyData.rows.length) return;
-
-  showLoading('產生 Excel 中⋯');
-
-  try {
-    // 動態載入 ExcelJS
-    if (typeof ExcelJS === 'undefined') {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-
-    // 從 yearMonth 取得年月資訊
-    const [adYear, monthPadded] = historyData.yearMonth.split('-');
-    const month = parseInt(monthPadded);
-    const rocYear = parseInt(adYear) - 1911;
-    const school = document.getElementById('schoolName').value || '小鳥幼兒園';
-
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet(`${rocYear}年${month}月`);
-
-    // 欄寬
-    ws.columns = [
-      {width:10},{width:6},{width:18},{width:36},{width:22},{width:44}
-    ];
-
-    const C = {
-      titleBg:'2E7D32', titleFg:'FFFFFF', subBg:'388E3C',
-      hdrBg:'A5D6A7', hdrFg:'1B5E20',
-      holBg:'FFCDD2', holFg:'B71C1C',
-      wkdBg:'F5F5F5', wkdFg:'9E9E9E',
-      row1:'FFFFFF', row2:'F1F8E9',
-      ingBg:'E8F5E9', ingFg:'2E7D32',
-      noteFg:'757575', noteBg:'FAFAFA',
-    };
-    const bdr  = {top:{style:'thin',color:{argb:'FFC8E6C9'}},bottom:{style:'thin',color:{argb:'FFC8E6C9'}},left:{style:'thin',color:{argb:'FFC8E6C9'}},right:{style:'thin',color:{argb:'FFC8E6C9'}}};
-    const bdrHd= {top:{style:'thin',color:{argb:'FF81C784'}},bottom:{style:'thin',color:{argb:'FF81C784'}},left:{style:'thin',color:{argb:'FF81C784'}},right:{style:'thin',color:{argb:'FF81C784'}}};
-
-    const setCell = (cell, val, fontColor, bgColor, bold, size, hAlign, border, wrap) => {
-      cell.value = val;
-      cell.font = {name:'Arial', bold:!!bold, color:{argb:'FF'+fontColor}, size:size||10};
-      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+bgColor}};
-      cell.alignment = {horizontal:hAlign||'center', vertical:'middle', wrapText:!!wrap};
-      cell.border = border || bdr;
-    };
-
-    // 第1列：幼兒園名稱
-    const r1 = ws.addRow([school,'','','','','']);
-    ws.mergeCells('A1:F1');
-    setCell(r1.getCell(1), school, C.titleFg, C.titleBg, true, 16, 'center', bdrHd);
-    r1.height = 36;
-
-    // 第2列：年月副標題
-    const r2 = ws.addRow([`${rocYear} 年 ${month} 月份　餐點表`,'','','','','']);
-    ws.mergeCells('A2:F2');
-    setCell(r2.getCell(1), `${rocYear} 年 ${month} 月份　餐點表`, C.titleFg, C.subBg, true, 13, 'center', bdrHd);
-    r2.height = 28;
-
-    // 第3列：欄位標題
-    const r3 = ws.addRow(['日期','星期','上午點心','午　　餐','下午點心','食　材　內　容']);
-    r3.eachCell(cell => {
-      cell.font = {name:'Arial', bold:true, size:11, color:{argb:'FF'+C.hdrFg}};
-      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.hdrBg}};
-      cell.alignment = {horizontal:'center', vertical:'middle'};
-      cell.border = bdrHd;
-    });
-    r3.height = 22;
-    ws.views = [{state:'frozen', ySplit:3}];
-
-    // 資料列
-    let alt = 0;
-    let rowIdx = 4;
-
-    historyData.rows.forEach(r => {
-      const date   = r.date || '';
-      const wkday  = r.weekday || '';
-
-      // 判斷是否為六日或假日
-      const isWkd  = (wkday === '六' || wkday === '日');
-      const isHol  = r.morningSnack === '' && r.lunchMain === '' && !isWkd && wkday !== '';
-
-      // 從 date 取月日
-      let dayLabel = date;
-      if (date && date.includes('-')) {
-        const parts = date.split('-');
-        if (parts.length === 3) dayLabel = `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
-      }
-
-      if (isWkd) {
-        const row = ws.addRow([dayLabel, wkday, '放　假', '', '', '']);
-        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
-        row.eachCell(cell => {
-          cell.font = {name:'Arial', size:10, color:{argb:'FF'+C.wkdFg}};
-          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.wkdBg}};
-          cell.alignment = {horizontal:'center', vertical:'middle'};
-          cell.border = bdr;
-        });
-        row.height = 18;
-
-      } else {
-        const rowBg = alt % 2 === 0 ? C.row1 : C.row2;
-        alt++;
-
-        // 組合午餐文字
-        const lunchText = [r.lunchMain, r.lunchMeat, r.lunchVeg, r.lunchBeanEgg, r.lunchSoup]
-          .filter(Boolean).join('\n');
-        const pmText = r.afternoonSnack || '';
-
-        const exRow = ws.addRow([dayLabel, wkday, r.morningSnack||'', lunchText, pmText, '']);
-
-        [1,2].forEach(ci => {
-          const cell = exRow.getCell(ci);
-          cell.font = {name:'Arial', size:10, color:{argb:'FF333333'}};
-          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg}};
-          cell.alignment = {horizontal:'center', vertical:'top'};
-          cell.border = bdr;
-        });
-        [3,4,5].forEach(ci => {
-          const cell = exRow.getCell(ci);
-          cell.font = {name:'Arial', size:10, color:{argb:'FF333333'}};
-          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg}};
-          cell.alignment = {horizontal:'left', vertical:'top', wrapText:true, indent:1};
-          cell.border = bdr;
-        });
-        // 食材欄留空（歷史資料沒有食材）
-        const ingCell = exRow.getCell(6);
-        ingCell.font = {name:'Arial', size:9, color:{argb:'FF'+C.ingFg}};
-        ingCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.ingBg}};
-        ingCell.alignment = {horizontal:'left', vertical:'top', wrapText:true, indent:1};
-        ingCell.border = bdr;
-
-        const lineCount = lunchText.split('\n').length;
-        exRow.height = Math.max(lineCount * 18, 54);
-      }
-      rowIdx++;
-    });
-
-    // 備註列
-    const rNote = ws.addRow(['※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。','','','','','']);
-    ws.mergeCells(`A${rowIdx}:F${rowIdx}`);
-    const noteCell = rNote.getCell(1);
-    noteCell.value = '※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。';
-    noteCell.font = {name:'Arial', size:9, italic:true, color:{argb:'FF'+C.noteFg}};
-    noteCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.noteBg}};
-    noteCell.alignment = {horizontal:'left', vertical:'middle', indent:1};
-    noteCell.border = bdr;
-    rNote.height = 20;
-
-    // 下載
-    const buf  = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = `${school}_${rocYear}年${month}月份_餐點表.xlsx`;
-    a.click();
-
-    showMsg('generateMsg', '✅ 歷史菜單 Excel 已下載！', 'success');
-
-  } catch(e) {
-    showMsg('generateMsg', '❌ 下載失敗：' + e.message, 'error');
-  } finally {
-    hideLoading();
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-// 設定
-// ══════════════════════════════════════════════════════════
-async function testConnection() {
-  showLoading('測試連線⋯');
-  try {
-    const res = await apiFetch({ action:'getAll' });
-    if (res.error) throw new Error(res.error);
-    showMsg('settingMsg','✅ 連線成功！資料庫已讀取。','success');
-  } catch(e) {
-    showMsg('settingMsg','❌ 連線失敗：'+e.message,'error');
-  }
-  hideLoading();
-}
-
-window.addEventListener('load', initApp);
-</script>
-</body>
-</html>
+};
