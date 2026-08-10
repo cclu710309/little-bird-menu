@@ -1,1670 +1,722 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>小鳥幼兒園 餐點表產生器</title>
-<style>
-:root {
-  --green-d: #2E7D32; --green-m: #388E3C; --green-l: #A5D6A7; --green-xl: #E8F5E9;
-  --fri-d: #E65100; --fri-l: #FFF3E0;
-  --red-d: #B71C1C; --red-l: #FFCDD2;
-  --gray-d: #616161; --gray-l: #F5F5F5; --gray-m: #E0E0E0;
-  --blue-d: #1565C0; --blue-l: #E3F2FD;
-  --amber-d: #F57F17; --amber-l: #FFF8E1;
-  --white: #FFFFFF; --text: #212121; --text2: #616161;
-  --border: #C8E6C9; --radius: 8px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: Arial, "Microsoft JhengHei", sans-serif; background: #F1F8E9; color: var(--text); min-height: 100vh; }
+// 小鳥幼兒園 餐點資料庫 - Google Apps Script v2.0
+// 新增：產生家長版 Excel 並回傳下載連結
 
-/* ── 頂部導覽 ── */
-.topbar { background: var(--green-d); color: white; padding: 0 24px; display: flex; align-items: center; gap: 16px; height: 56px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); position: sticky; top: 0; z-index: 100; }
-.topbar-title { font-size: 17px; font-weight: 700; flex: 1; }
-.topbar-sub { font-size: 12px; opacity: 0.8; }
-.conn-badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-weight: 600; }
-.conn-badge.ok { background: #69F0AE; color: #1B5E20; }
-.conn-badge.err { background: #FF5252; color: white; }
-.conn-badge.loading { background: rgba(255,255,255,0.2); color: white; }
+const SHEET_ID = '1IbyZEOf3cTEgEGYwPH8sev3WhdrLJxIPGfzlHhaT56g';
 
-/* ── 頁籤 ── */
-.tabs { display: flex; background: var(--green-m); padding: 0 24px; gap: 4px; }
-.tab { padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: rgba(255,255,255,0.7); border-bottom: 3px solid transparent; transition: all 0.2s; }
-.tab:hover { color: white; }
-.tab.active { color: white; border-bottom-color: #69F0AE; }
-
-/* ── 主內容 ── */
-.content { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
-.section { display: none; }
-.section.active { display: block; }
-
-/* ── 卡片 ── */
-.card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
-.card-title { font-size: 14px; font-weight: 700; color: var(--green-d); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-
-/* ── 表單元件 ── */
-.row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
-label { font-size: 13px; color: var(--text2); min-width: 80px; }
-select, input[type=text], input[type=date] {
-  font-size: 13px; padding: 7px 10px; border: 1px solid var(--gray-m);
-  border-radius: 6px; background: white; color: var(--text); font-family: inherit;
-}
-select:focus, input:focus { outline: 2px solid var(--green-l); border-color: var(--green-d); }
-
-/* ── 按鈕 ── */
-.btn { padding: 8px 16px; font-size: 13px; border-radius: 6px; cursor: pointer; font-weight: 600; border: none; transition: all 0.15s; font-family: inherit; display: inline-flex; align-items: center; gap: 6px; }
-.btn-primary { background: var(--green-d); color: white; }
-.btn-primary:hover { background: var(--green-m); }
-.btn-secondary { background: white; color: var(--green-d); border: 1px solid var(--green-d); }
-.btn-secondary:hover { background: var(--green-xl); }
-.btn-danger { background: white; color: var(--red-d); border: 1px solid var(--red-l); }
-.btn-danger:hover { background: var(--red-l); }
-.btn-sm { padding: 4px 10px; font-size: 12px; }
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-/* ── 訊息 ── */
-.msg { font-size: 13px; padding: 10px 14px; border-radius: 6px; margin-bottom: 12px; }
-.msg-info { background: var(--blue-l); color: var(--blue-d); }
-.msg-success { background: var(--green-xl); color: var(--green-d); }
-.msg-error { background: var(--red-l); color: var(--red-d); }
-.msg-warn { background: var(--amber-l); color: var(--amber-d); }
-
-/* ── 菜單表格 ── */
-.menu-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
-.menu-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 700px; }
-.menu-table th { background: var(--green-xl); color: var(--green-d); font-weight: 700; padding: 9px 10px; text-align: center; border-bottom: 2px solid var(--green-l); white-space: nowrap; }
-.menu-table td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.6; }
-.menu-table tr:last-child td { border-bottom: none; }
-.menu-table tr.row-work:nth-child(even) td { background: #FAFFFE; }
-.menu-table tr.row-fri td { background: var(--fri-l); }
-.menu-table tr.row-hol td { background: var(--red-l); color: var(--red-d); text-align: center; font-weight: 600; }
-.menu-table tr.row-wkd td { background: var(--gray-l); color: var(--gray-d); }
-.cell-edit { cursor: pointer; min-height: 28px; border-radius: 4px; }
-.cell-edit:hover { background: rgba(46,125,50,0.07); }
-.cell-edit textarea { width: 100%; font-size: 12px; padding: 4px 6px; border: 1px solid var(--green-l); border-radius: 4px; font-family: inherit; resize: vertical; min-height: 48px; background: white; }
-.tag-dairy { display: inline-block; font-size: 10px; background: #E3F2FD; color: #1565C0; padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-bottom: 2px; }
-.tag-special { display: inline-block; font-size: 10px; background: var(--fri-l); color: var(--fri-d); padding: 1px 6px; border-radius: 10px; font-weight: 600; margin-bottom: 2px; }
-
-/* ── 資料庫表格 ── */
-.db-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-.db-table th { background: var(--green-xl); color: var(--green-d); font-weight: 700; padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--green-l); }
-.db-table td { padding: 7px 10px; border-bottom: 1px solid var(--gray-m); vertical-align: middle; }
-.db-table tr:last-child td { border-bottom: none; }
-.db-table tr:hover td { background: var(--green-xl); }
-.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; }
-.badge-on { background: var(--green-xl); color: var(--green-d); }
-.badge-off { background: var(--red-l); color: var(--red-d); }
-.badge-meat-pig { background: #FFF3E0; color: #E65100; }
-.badge-meat-chicken { background: #E3F2FD; color: #1565C0; }
-.badge-meat-seafood { background: #E0F2F1; color: #00695C; }
-.badge-bean { background: var(--green-xl); color: var(--green-d); }
-.badge-egg { background: #FFF3E0; color: #E65100; }
-.badge-dark { background: #1B5E20; color: white; }
-.badge-semi { background: var(--amber-l); color: var(--amber-d); }
-.badge-warn { background: var(--red-l); color: var(--red-d); }
-
-/* ── 歷史記錄 ── */
-.history-list { display: grid; gap: 8px; }
-.history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--green-xl); border-radius: 6px; border: 1px solid var(--border); }
-.history-item-label { font-size: 13px; font-weight: 600; color: var(--green-d); }
-.history-item-count { font-size: 11px; color: var(--text2); }
-
-/* ── loading ── */
-.loading-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 999; align-items: center; justify-content: center; flex-direction: column; gap: 14px; }
-.loading-overlay.show { display: flex; }
-.loading-box { background: white; border-radius: 12px; padding: 28px 36px; text-align: center; box-shadow: 0 8px 32px rgba(0,0,0,0.2); }
-.loading-spinner { width: 36px; height: 36px; border: 4px solid var(--green-l); border-top-color: var(--green-d); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.loading-text { font-size: 14px; color: var(--text2); }
-
-/* ── 設定頁 ── */
-.setting-row { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 16px; }
-.setting-label { font-size: 13px; font-weight: 600; min-width: 120px; padding-top: 8px; }
-.setting-input { flex: 1; }
-.setting-input input { width: 100%; }
-.setting-desc { font-size: 11px; color: var(--text2); margin-top: 4px; }
-
-/* ── RWD ── */
-@media (max-width: 600px) {
-  .topbar { padding: 0 12px; } .tabs { padding: 0 8px; } .tab { padding: 10px 12px; font-size: 12px; }
-  .content { padding: 12px 8px; }
-}
-
-/* ── PDF 列印樣式 ── */
-@media print {
-  /* 隱藏所有工具介面，只顯示 PDF 列印區 */
-  body > * { display: none !important; }
-  #pdf-print-area { display: block !important; }
-
-  body {
-    background: white;
-    font-family: Arial, "Microsoft JhengHei", sans-serif;
-    margin: 0; padding: 0;
-  }
-
-  #pdf-print-area {
-    display: block !important;
-    width: 100%;
-  }
-
-  .pdf-header { margin-bottom: 1px; }
-  .pdf-school { font-size: 13pt !important; letter-spacing: 2px !important; }
-  .pdf-month  { font-size: 9pt !important; margin-top: 1px !important; }
-  .pdf-hint   { font-size: 6.5pt !important; padding: 1px 5px !important; margin-top: 1px !important; }
-
-  .pdf-table  { font-size: 7.5pt !important; margin-top: 2px !important; }
-  .pdf-table th { padding: 3px 3px !important; font-size: 8pt !important; }
-  .pdf-table td { padding: 2px 4px !important; line-height: 1.25 !important; white-space: nowrap; overflow: hidden; }
-
-  .pdf-footer { font-size: 5.5pt !important; margin-top: 2px !important; }
-
-  @page {
-    size: A4 landscape;
-    margin: 6mm 5mm;
-  }
-}
-
-  .pdf-header {
-    text-align: center;
-    margin-bottom: 6px;
-  }
-  .pdf-school {
-    font-size: 20pt;
-    font-weight: bold;
-    color: #2E7D32;
-    letter-spacing: 4px;
-  }
-  .pdf-month {
-    font-size: 13pt;
-    color: #388E3C;
-    margin-top: 2px;
-  }
-  .pdf-hint {
-    font-size: 7.5pt;
-    color: #558B2F;
-    margin-top: 4px;
-    padding: 3px 8px;
-    background: #F1F8E9;
-    border-radius: 4px;
-    display: inline-block;
-  }
-  .pdf-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 8.5pt;
-    margin-top: 8px;
-    table-layout: fixed;
-  }
-  .pdf-table th {
-    background: #A5D6A7 !important;
-    color: #1B5E20;
-    font-weight: bold;
-    padding: 5px 4px;
-    text-align: center;
-    border: 1px solid #81C784;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .pdf-table td {
-    padding: 4px 5px;
-    border: 1px solid #C8E6C9;
-    vertical-align: top;
-    line-height: 1.5;
-    word-break: break-all;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  .pdf-row-work { background: #FFFFFF; }
-  .pdf-row-alt  { background: #F1F8E9 !important; }
-  .pdf-row-wkd  { background: #F5F5F5 !important; color: #9E9E9E; }
-  .pdf-row-hol  { background: #FFCDD2 !important; color: #B71C1C; font-weight: bold; }
-  .pdf-cell-date { text-align: center; width: 8%; white-space: nowrap; }
-  .pdf-cell-week { text-align: center; width: 4%; }
-  .pdf-cell-am   { width: 20%; }
-  .pdf-cell-lunch{ width: 38%; }
-  .pdf-cell-pm   { width: 30%; }
-  .pdf-footer {
-    margin-top: 6px;
-    font-size: 7pt;
-    color: #9E9E9E;
-    font-style: italic;
-  }
-  @page {
-    size: A4 landscape;
-    margin: 10mm 8mm;
-  }
-}
-</style>
-</head>
-<body>
-
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="loading-box">
-    <div class="loading-spinner"></div>
-    <div class="loading-text" id="loadingText">處理中，請稍候⋯</div>
-  </div>
-</div>
-
-<div class="topbar">
-  <div>
-    <div class="topbar-title">🍱 小鳥幼兒園 餐點表產生器</div>
-    <div class="topbar-sub">連接 Google Sheet 資料庫</div>
-  </div>
-  <span class="conn-badge loading" id="connBadge">連線中⋯</span>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="showTab('generate',this)">📅 產生菜單</button>
-  <button class="tab" onclick="showTab('db',this)">🗂 餐點資料庫</button>
-  <button class="tab" onclick="showTab('holiday',this)">📌 假日設定</button>
-  <button class="tab" onclick="showTab('history',this)">📚 歷史菜單</button>
-  <button class="tab" onclick="showTab('setting',this)">⚙️ 設定</button>
-</div>
-
-<div class="content">
-
-<!-- ══ 產生菜單 ══ -->
-<div id="sec-generate" class="section active">
-  <div class="card">
-    <div class="card-title">📅 產生月份菜單</div>
-    <div class="row">
-      <label>幼兒園名稱</label>
-      <input type="text" id="schoolName" value="小鳥幼兒園" style="width:180px">
-    </div>
-    <div class="row">
-      <label>選擇月份</label>
-      <select id="selYear">
-        <option value="113">113年</option><option value="114">114年</option>
-        <option value="115" selected>115年</option><option value="116">116年</option>
-      </select>
-      <select id="selMonth">
-        <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
-        <option value="4">4月</option><option value="5">5月</option><option value="6" selected>6月</option>
-        <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
-        <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-      </select>
-      <button class="btn btn-primary" onclick="generateMenu()" id="btnGenerate">✨ 產生菜單</button>
-      <button class="btn btn-secondary" id="btnExport" style="display:none" onclick="exportExcel()">📥 匯出 Excel</button>
-      <button class="btn btn-primary" id="btnPdf" style="display:none" onclick="exportPdf()">📄 匯出 PDF</button>
-      <button class="btn btn-secondary" id="btnSaveHistory" style="display:none" onclick="saveToHistory()">💾 儲存至歷史菜單</button>
-    </div>
-    <div id="generateMsg"></div>
-  </div>
-  <div id="menuArea"></div>
-</div>
-
-<!-- ══ 餐點資料庫 ══ -->
-<div id="sec-db" class="section">
-  <div class="card">
-    <div class="card-title">➕ 新增品項</div>
-    <div class="row">
-      <label>餐別分類</label>
-      <select id="addCat">
-        <option value="morning_snack">上午點心</option>
-        <option value="afternoon_snack">下午點心</option>
-        <option value="dairy">乳製品</option>
-        <option value="lunch_main">午餐主食</option>
-        <option value="lunch_special">週五特餐</option>
-        <option value="lunch_meat">午餐肉類</option>
-        <option value="lunch_veg">午餐青菜類</option>
-        <option value="lunch_bean_egg">午餐豆蛋類</option>
-        <option value="lunch_soup">午餐湯品</option>
-      </select>
-      <input type="text" id="addName" placeholder="品項名稱" style="width:150px">
-      <input type="text" id="addIng" placeholder="食材內容（以頓號分隔）" style="width:220px">
-      <button class="btn btn-primary" onclick="addItem()">新增</button>
-    </div>
-    <div id="addMsg"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">🗂 現有品項</div>
-    <div class="row" style="margin-bottom:14px">
-      <label>篩選分類</label>
-      <select id="filterCat" onchange="renderDb()">
-        <option value="all">全部</option>
-        <option value="morning_snack">上午點心</option>
-        <option value="afternoon_snack">下午點心</option>
-        <option value="dairy">乳製品</option>
-        <option value="lunch_main">午餐主食</option>
-        <option value="lunch_special">週五特餐</option>
-        <option value="lunch_meat">午餐肉類</option>
-        <option value="lunch_veg">午餐青菜類</option>
-        <option value="lunch_bean_egg">午餐豆蛋類</option>
-        <option value="lunch_soup">午餐湯品</option>
-      </select>
-      <span id="dbCount" style="font-size:12px;color:var(--text2)"></span>
-    </div>
-    <div style="overflow-x:auto"><table class="db-table" id="dbTable"><tr><td style="color:var(--text2);padding:20px;text-align:center">載入中⋯</td></tr></table></div>
-  </div>
-</div>
-
-<!-- ══ 假日設定 ══ -->
-<div id="sec-holiday" class="section">
-  <div class="card">
-    <div class="card-title">➕ 新增假日 / 補班日</div>
-    <div class="msg msg-info">週六日系統自動放假，不需填入。補班日（週六日需上班）請選「補班日」，系統當天會正常排餐點。</div>
-    <div class="row" style="margin-top:12px">
-      <input type="text" id="hdDate" placeholder="日期 YYYY-MM-DD" style="width:160px">
-      <input type="text" id="hdName" placeholder="名稱（如：端午節）" style="width:160px">
-      <select id="hdType">
-        <option value="放假日">放假日</option>
-        <option value="補班日">補班日</option>
-      </select>
-      <button class="btn btn-primary" onclick="window.addHoliday()">新增</button>
-    </div>
-    <div id="hdMsg"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">📌 假日清單</div>
-    <div style="overflow-x:auto"><table class="db-table" id="hdTable"><tr><td style="color:var(--text2);padding:20px;text-align:center">載入中⋯</td></tr></table></div>
-  </div>
-</div>
-
-<!-- ══ 歷史菜單 ══ -->
-<div id="sec-history" class="section">
-  <div class="card">
-    <div class="card-title">📚 歷史菜單查詢與下載</div>
-    <div class="msg msg-info">每次產生菜單並按「儲存至歷史菜單」後，系統會自動記錄。產生新菜單時也會比對歷史，避免近期重複。</div>
-    <div class="row" style="margin-top:12px">
-      <label>選擇月份</label>
-      <select id="histYear">
-        <option value="113">113年</option><option value="114">114年</option><option value="115" selected>115年</option>
-      </select>
-      <select id="histMonth">
-        <option value="01">1月</option><option value="02">2月</option><option value="03">3月</option>
-        <option value="04">4月</option><option value="05">5月</option><option value="06" selected>6月</option>
-        <option value="07">7月</option><option value="08">8月</option><option value="09">9月</option>
-        <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
-      </select>
-      <button class="btn btn-secondary" onclick="loadHistory()">查詢</button>
-      <button class="btn btn-primary" id="btnDlHistory" style="display:none" onclick="downloadHistory()">📥 下載此月 Excel</button>
-    </div>
-    <div id="historyArea" style="margin-top:12px"></div>
-  </div>
-</div>
-
-<!-- ══ 設定 ══ -->
-<div id="sec-setting" class="section">
-  <div class="card">
-    <div class="card-title">⚙️ Google Sheet 連線設定</div>
-    <div class="msg msg-success" style="margin-bottom:12px">✓ 已內建連線設定，任何裝置開啟此工具即可自動連線，無需額外設定。</div>
-    <div style="font-size:13px;line-height:2;color:var(--text2)">
-      <div><span style="font-weight:600;color:var(--green-d)">Google Sheet ID：</span>1IbyZEOf3cTEgEGYwPH8sev3WhdrLJxIPGfzlHhaT56g</div>
-      <div><span style="font-weight:600;color:var(--green-d)">Apps Script：</span>已部署為網路應用程式</div>
-    </div>
-    <div class="row" style="margin-top:12px">
-      <button class="btn btn-secondary" onclick="testConnection()">🔌 測試連線</button>
-    </div>
-    <div id="settingMsg"></div>
-  </div>
-  <div class="card">
-    <div class="card-title">ℹ️ 關於本工具</div>
-    <div style="font-size:13px;line-height:2;color:var(--text2)">
-      <div>版本：v1.5　最後更新：2026-07-16</div>
-      <div>適用對象：小鳥幼兒園　2～3位老師共用</div>
-      <div>資料庫：Google Sheet（共 13 個分頁）</div>
-      <div style="margin-top:8px;color:var(--green-d);font-weight:600">🥗 午餐設計規則</div>
-      <div>・週一～四：主食＋肉類＋青菜＋豆蛋＋湯品（三菜一湯）</div>
-      <div>・週五：特餐主食＋湯品，不另排配菜</div>
-      <div>・肉類輪替：豬→雞→海鮮，每週海鮮至少一次</div>
-      <div>・每週豆製品至少一次・每週未精製主食至少兩次</div>
-      <div>・深色蔬菜需超過 1/3・當季蔬菜優先安排</div>
-      <div>・加工半成品（丸類、火腿等）每週不超過 2 次</div>
-      <div>・近 2～3 個月內同道菜避免重複</div>
-      <div style="margin-top:8px;color:var(--green-d);font-weight:600">🍰 點心設計規則</div>
-      <div>・上午點心一品；下午點心一品＋季節水果（廚房阿姨決定）</div>
-      <div>・乳製品每週至少一次，額外附加於點心旁（不取代點心）</div>
-      <div>・乳製品優先搭配麵包糕點類，避免搭配粥飯麵食類、甜湯類</div>
-      <div>・同日上下午點心避免同甜（可兩餐都鹹、或一甜一鹹）</div>
-      <div>・同日上下午點心避免同性質類別（粥飯麵食、麵包糕點、甜湯、鹹食）</div>
-      <div>・前後天點心避免同性質、同甜鹹重複</div>
-      <div>・高油糖鹽品項（菠蘿麵包、杯子蛋糕等）每週不超過 1 次</div>
-      <div>・近 2～3 個月內同道點心避免重複</div>
-    </div>
-  </div>
-</div>
-
-</div><!-- /content -->
-
-<script>
-// ══════════════════════════════════════════════════════════
-// 設定與狀態
-// ══════════════════════════════════════════════════════════
-const API_URL = 'https://script.google.com/macros/s/AKfycbyDYYTsokHhlTQ78EuNo5BON2trN-4liByK_0FFU_6OLQSJVpKkeVB-ze-x_4G4eY8/exec';
-let dbData = null;        // 從 Google Sheet 讀取的資料庫
-let generatedMenu = null; // 目前產生的菜單
-let historyData = null;   // 歷史菜單資料
-
-const CAT_LABEL = {
-  morning_snack:'上午點心', afternoon_snack:'下午點心', dairy:'乳製品',
-  lunch_main:'午餐主食', lunch_special:'週五特餐', lunch_meat:'午餐肉類',
-  lunch_veg:'午餐青菜類', lunch_bean_egg:'午餐豆蛋類', lunch_soup:'午餐湯品'
+const SHEETS = {
+  morning_snack:  '上午點心',
+  afternoon_snack:'下午點心',
+  dairy:          '乳製品',
+  lunch_main:     '午餐主食',
+  lunch_special:  '週五特餐',
+  lunch_meat:     '午餐肉類',
+  lunch_veg:      '午餐青菜類',
+  lunch_bean_egg: '午餐豆蛋類',
+  lunch_soup:     '午餐湯品',
+  holidays:       '假日清單',
+  history:        '歷史菜單',
 };
 
-const DAY_NAMES = ['日','一','二','三','四','五','六'];
+// ── 測試函式（在 Apps Script 介面直接執行）─────────────
+function testGetHistory() {
+  const r07 = getHistory('2026-07');
+  Logger.log('2026-07 筆數：' + r07.length);
+  if (r07.length > 0) Logger.log('第一筆 date：' + r07[0].date + ' / yearMonth：' + r07[0].yearMonth);
 
-// ══ 台灣季節對照（月份→當季標籤）══
-const SEASON_MAP = {
-  1:'冬',2:'冬',3:'春',4:'春',5:'春',6:'夏',
-  7:'夏',8:'夏',9:'秋',10:'秋',11:'秋',12:'冬'
-};
-
-// ══════════════════════════════════════════════════════════
-// 工具函式
-// ══════════════════════════════════════════════════════════
-function showLoading(text='處理中，請稍候⋯') {
-  document.getElementById('loadingText').textContent = text;
-  document.getElementById('loadingOverlay').classList.add('show');
-}
-function hideLoading() {
-  document.getElementById('loadingOverlay').classList.remove('show');
-}
-function showMsg(id, text, type='info') {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.innerHTML = `<div class="msg msg-${type}">${text}</div>`;
-  setTimeout(()=>{ if(el) el.innerHTML=''; }, 4000);
+  const r05 = getHistory('2026-05');
+  Logger.log('2026-05 筆數：' + r05.length);
 }
 
-async function apiFetch(params) {
-  const url = new URL(API_URL);
-  Object.entries(params).forEach(([k,v])=>url.searchParams.set(k,v));
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+// ── GET 入口 ────────────────────────────────────────────
+function doGet(e) {
+  const action = e.parameter.action;
+  let result;
   try {
-    const res = await fetch(url.toString(), { redirect:'follow', signal: controller.signal });
-    clearTimeout(timer);
-    return res.json();
-  } catch(e) {
-    clearTimeout(timer);
-    throw e;
+    if      (action === 'getAll')        result = getAllData();
+    else if (action === 'getHistory')    result = getHistory(e.parameter.yearMonth);
+    else if (action === 'saveHistory')   result = saveHistoryGet(e.parameter);
+    else if (action === 'addHoliday')    result = addHoliday(e.parameter);
+    else if (action === 'deleteHoliday') result = deleteHoliday(e.parameter);
+    else if (action === 'addItem')       result = addItemGet(e.parameter);
+    else if (action === 'updateStatus')  result = updateStatus(e.parameter);
+    else result = { error: '未知的 action：' + action };
+  } catch(err) {
+    result = { error: err.message };
   }
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-async function apiPost(payload) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 15000);
+// ── POST 入口 ───────────────────────────────────────────
+function doPost(e) {
+  let payload;
   try {
-    const formData = new FormData();
-    formData.append('payload', JSON.stringify(payload));
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      body: formData,
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    return res.json();
-  } catch(e) {
-    clearTimeout(timer);
-    throw e;
+    // 嘗試直接解析 JSON（Content-Type: application/json）
+    payload = JSON.parse(e.postData.contents);
+  } catch(err) {
+    // 若失敗則嘗試 FormData 格式
+    try {
+      payload = JSON.parse(e.parameter.payload);
+    } catch(err2) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ error: '無法解析請求資料' }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
   }
-}
-
-// JSON 方式傳送（給 saveHistory 等需要傳大量資料的操作用）
-async function apiPostJson(payload) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 30000);
+  const action = payload.action;
+  let result;
   try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      redirect: 'follow',
-      signal: controller.signal,
-    });
-    clearTimeout(timer);
-    return res.json();
-  } catch(e) {
-    clearTimeout(timer);
-    throw e;
+    if      (action === 'addItem')       result = addItem(payload);
+    else if (action === 'updateStatus')  result = updateStatus(payload);
+    else if (action === 'addHoliday')    result = addHoliday(payload);
+    else if (action === 'deleteHoliday') result = deleteHoliday(payload);
+    else if (action === 'saveHistory')   result = saveHistory(payload);
+    else if (action === 'exportExcel')   return exportExcelPost(payload);
+    else result = { error: '未知的 action：' + action };
+  } catch(err) {
+    result = { error: err.message };
   }
+  return ContentService
+    .createTextOutput(JSON.stringify(result))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ══════════════════════════════════════════════════════════
-// 初始化：讀取資料庫
+// 產生家長版 Excel
 // ══════════════════════════════════════════════════════════
-async function initApp() {
-  showLoading('連線 Google Sheet 資料庫⋯');
+function exportExcelPost(payload) {
   try {
-    const data = await apiFetch({action:'getAll'});
-    if (data.error) throw new Error(data.error);
-    dbData = data;
-    document.getElementById('connBadge').textContent = '✓ 已連線';
-    document.getElementById('connBadge').className = 'conn-badge ok';
-    renderDb();
-    renderHolidays();
-  } catch(e) {
-    document.getElementById('connBadge').textContent = '✗ 連線失敗';
-    document.getElementById('connBadge').className = 'conn-badge err';
-    showMsg('generateMsg',
-      '⚠️ 無法連線 Google Sheet，請確認網路連線後點選重試。' +
-      '若剛開啟工具，Apps Script 可能正在喚醒，請等 30 秒後重試。' +
-      '<br><br><button class="btn btn-secondary" onclick="initApp()" style="margin-top:4px">🔄 重試連線</button>',
-      'warn');
-  } finally {
-    hideLoading();
-  }
-}
+    const { school, rocYear, month, rows } = payload;
 
-// ══════════════════════════════════════════════════════════
-// 頁籤切換
-// ══════════════════════════════════════════════════════════
-function showTab(t, btn) {
-  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('sec-'+t).classList.add('active');
-}
-
-// ══════════════════════════════════════════════════════════
-// 菜單產生邏輯
-// ══════════════════════════════════════════════════════════
-function isHoliday(dateStr) {
-  if (!dbData || !dbData.holidays) return null;
-  return dbData.holidays.find(h => h.date === dateStr) || null;
-}
-
-function getWorkDays(rocYear, month) {
-  const adYear = parseInt(rocYear) + 1911;
-  const daysInMonth = new Date(adYear, month, 0).getDate();
-  const days = [];
-  for (let d = 1; d <= daysInMonth; d++) {
-    const ds = `${adYear}-${String(month).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dateObj = new Date(ds + 'T00:00:00');
-    const dow = dateObj.getDay(); // 0=Sun,6=Sat
-    const hol = isHoliday(ds);
-    let type = 'work';
-    if (dow === 0 || dow === 6) {
-      // 補班日例外
-      if (hol && hol.type === '補班日') type = 'work';
-      else type = 'weekend';
-    } else if (hol && hol.type === '放假日') {
-      type = 'holiday';
-    } else if (dow === 5) {
-      type = 'fri';
-    }
-    days.push({ date:ds, day:d, dow, dayName:DAY_NAMES[dow], type, holName: hol ? hol.name : null });
-  }
-  return days;
-}
-
-function pickFrom(arr, used, limit=6) {
-  const avail = arr.filter(x => !used.find(u=>u===x.name));
-  const pool = avail.length > 0 ? avail : arr;
-  const v = pool[Math.floor(Math.random() * pool.length)];
-  used.push(v.name);
-  if (used.length > limit) used.shift();
-  return v;
-}
-
-function getCurrentSeason(month) {
-  return SEASON_MAP[month] || '全年';
-}
-
-function filterBySeason(items, month) {
-  const season = getCurrentSeason(month);
-  // 優先選當季或全年，排除非當季
-  const inSeason = items.filter(it => {
-    if (!it.season) return true;
-    return it.season === '全年' || it.season.includes(season);
-  });
-  return inSeason.length > 0 ? inSeason : items;
-}
-
-async function generateMenu() {
-  if (!dbData) { showMsg('generateMsg','尚未連線資料庫，請稍候或至設定頁確認連線。','error'); return; }
-  const rocYear = document.getElementById('selYear').value;
-  const month = parseInt(document.getElementById('selMonth').value);
-  const school = document.getElementById('schoolName').value || '小鳥幼兒園';
-  const adYear = parseInt(rocYear) + 1911;
-  const yearMonthStr = `${adYear}-${String(month).padStart(2,'0')}`;
-
-  showLoading('依規則產生菜單中⋯');
-
-  // 讀取歷史避免重複
-  let historyUsed = [];
-  try {
-    const histRes = await apiFetch({action:'getHistory', yearMonth:''});
-    if (Array.isArray(histRes)) {
-      // 取近3個月
-      const recent = histRes.filter(r => r.yearMonth < yearMonthStr).slice(-60);
-      recent.forEach(r => {
-        [r.morningSnack, r.lunchMain, r.lunchMeat, r.lunchVeg, r.lunchBeanEgg, r.lunchSoup, r.afternoonSnack]
-          .forEach(v => { if(v && !historyUsed.includes(v)) historyUsed.push(v); });
-      });
-    }
-  } catch(e) {}
-
-  const allDays = getWorkDays(rocYear, month);
-
-  // 使用紀錄
-  const usedAmSnack = [...historyUsed];
-  const usedPmSnack = [...historyUsed];
-  const usedMain    = [...historyUsed];
-  const usedSpecial = [...historyUsed];
-  const usedMeat    = [...historyUsed];
-  const usedVeg     = [...historyUsed];
-  const usedBE      = [...historyUsed];
-  const usedSoup    = [...historyUsed];
-
-  // 前一天點心性質記錄（用於避免前後天同性質）
-  let prevAmCat = '', prevAmTaste = '';
-  let prevPmCat = '', prevPmTaste = '';
-
-  const meatTypes = ['豬','雞','海鮮'];
-  let meatTypeIdx = 0;
-  let weekDairyDone = false;
-  let weekSeafoodDone = false;
-  let weekBeanDone = false;
-  let weekWholeGrain = 0;
-  let weekHighFat = 0;
-  let weekSemi = 0;
-  let currentWeek = -1;
-
-  const season = getCurrentSeason(month);
-  const vegInSeason = filterBySeason(dbData.lunch_veg || [], month);
-
-  const menuDays = allDays.map(d => {
-    // 週次重置
-    const dateObj = new Date(d.date + 'T00:00:00');
-    const weekNum = Math.ceil((dateObj.getDate() + new Date(dateObj.getFullYear(), dateObj.getMonth(), 1).getDay()) / 7);
-    if (weekNum !== currentWeek) {
-      currentWeek = weekNum;
-      weekDairyDone = false;
-      weekSeafoodDone = false;
-      weekBeanDone = false;
-      weekWholeGrain = 0;
-      weekHighFat = 0;
-      weekSemi = 0;
-    }
-
-    if (d.type === 'weekend' || d.type === 'holiday') return d;
-
-    const isFri = (d.type === 'fri');
-    const isMonday = (d.dow === 1);
-
-    // 上午點心：正常從資料庫挑選
-    const amPool = (dbData.morning_snack || []).filter(it => {
-      if (weekHighFat >= 1 && it.highFat) return false;
-      // 避免前一天上午同性質
-      if (prevAmCat && it.category === prevAmCat) return false;
-      // 避免前一天上午同甜鹹
-      if (prevAmTaste === '甜' && it.taste === '甜') return false;
-      return true;
-    });
-    const amSnack = pickFrom(amPool.length ? amPool : (dbData.morning_snack||[]), usedAmSnack, 20);
-    if (amSnack && amSnack.highFat) weekHighFat++;
-
-    // 乳製品：額外附加（不取代點心）
-    // 排除粥飯麵食類和甜湯類，其他類別都可以搭配
-    let dairyItem = null;
-    const dairyItems = (dbData.dairy || []);
-    const DAIRY_EXCLUDE_CATS = ['粥飯麵食類', '甜湯類']; // 不適合搭配乳製品的類別
-    const dairyOkForSnack = (snack) => {
-      if (!snack) return false;
-      const cat = snack.category || '';
-      return !DAIRY_EXCLUDE_CATS.includes(cat);
-    };
-
-    // DEBUG
-    console.log(`${d.date} dow=${d.dow} weekDairyDone=${weekDairyDone} snack=${amSnack?.name} cat=${amSnack?.category} dairyOk=${dairyOkForSnack(amSnack)} dairyItems=${dairyItems.length}`);
-
-    if (!weekDairyDone && isMonday && dairyItems.length > 0) {
-      if (dairyOkForSnack(amSnack)) {
-        dairyItem = dairyItems[Math.floor(Math.random() * dairyItems.length)];
-        weekDairyDone = true;
-        console.log(`✅ 週一安排乳製品：${dairyItem.name} 搭配 ${amSnack?.name}`);
-      } else {
-        console.log(`⚠️ 週一點心不適合搭配乳製品：${amSnack?.name} cat=${amSnack?.category}`);
-      }
-    }
-    if (!weekDairyDone && !isMonday && dairyItems.length > 0) {
-      if (dairyOkForSnack(amSnack) || d.dow >= 3) {
-        dairyItem = dairyItems[Math.floor(Math.random() * dairyItems.length)];
-        weekDairyDone = true;
-        console.log(`✅ 非週一安排乳製品：${dairyItem.name} 搭配 ${amSnack?.name}`);
-      }
-    }
-
-    // 下午點心：確保甜鹹不同日同甜，性質不同類，且避免前後天重複
-    let pmSnack;
-    const amTaste = amSnack ? (amSnack.taste || '') : '';
-    const amCat   = amSnack ? (amSnack.category || '') : '';
-    const pmPool  = (dbData.afternoon_snack || []).filter(it => {
-      if (amTaste === '甜' && it.taste === '甜') return false;  // 同日不同甜
-      if (amCat && it.category === amCat) return false;          // 同日不同類
-      if (weekHighFat >= 1 && it.highFat) return false;
-      // 避免前一天下午同性質
-      if (prevPmCat && it.category === prevPmCat) return false;
-      // 避免前一天下午同甜鹹（除非都是鹹）
-      if (prevPmTaste === '甜' && it.taste === '甜') return false;
-      return true;
-    });
-    pmSnack = pickFrom(pmPool.length ? pmPool : (dbData.afternoon_snack||[]), usedPmSnack, 20);
-
-    // 記錄今天的性質，供明天參考
-    prevAmCat   = amSnack ? (amSnack.category || '') : '';
-    prevAmTaste = amSnack ? (amSnack.taste    || '') : '';
-    prevPmCat   = pmSnack ? (pmSnack.category || '') : '';
-    prevPmTaste = pmSnack ? (pmSnack.taste    || '') : '';
-
-    // 午餐
-    let lunch;
-    if (isFri) {
-      const special = pickFrom(dbData.lunch_special||[], usedSpecial, 6);
-      const soup    = pickFrom(dbData.lunch_soup||[], usedSoup, 8);
-      lunch = { type:'special', main:special, soup };
-    } else {
-      // 主食：確保未精製每週至少2次
-      const mainPool = (dbData.lunch_main||[]).filter(it => {
-        if (weekWholeGrain < 2 && d.dow >= 3) return it.wholegrain; // 週三後強制未精製
-        return true;
-      });
-      const main = pickFrom(mainPool.length ? mainPool : (dbData.lunch_main||[]), usedMain, 5);
-      if (main && main.wholegrain) weekWholeGrain++;
-
-      // 肉類：輪替豬雞海鮮，確保每週有海鮮
-      let meatPool = (dbData.lunch_meat||[]).filter(it => {
-        if (weekSemi >= 2 && it.semiProcessed) return false;
-        // 週四前確保海鮮出現
-        if (!weekSeafoodDone && d.dow === 4) return it.meatType === '海鮮';
-        return it.meatType === meatTypes[meatTypeIdx % 3];
-      });
-      if (!meatPool.length) meatPool = dbData.lunch_meat || [];
-      const meat = pickFrom(meatPool, usedMeat, 6);
-      if (meat) {
-        meatTypeIdx++;
-        if (meat.semiProcessed) weekSemi++;
-        if (meat.meatType === '海鮮') weekSeafoodDone = true;
-      }
-
-      // 青菜：優先當季，深色比例
-      const veg = pickFrom(vegInSeason.length ? vegInSeason : (dbData.lunch_veg||[]), usedVeg, 6);
-
-      // 豆蛋類：確保每週豆製品至少一次
-      let bePool = (dbData.lunch_bean_egg||[]);
-      if (!weekBeanDone && d.dow >= 3) {
-        const beanOnly = bePool.filter(it => it.beanType === '豆製品');
-        if (beanOnly.length) bePool = beanOnly;
-      }
-      const beanEgg = pickFrom(bePool, usedBE, 6);
-      if (beanEgg && beanEgg.beanType === '豆製品') weekBeanDone = true;
-
-      const soup = pickFrom(dbData.lunch_soup||[], usedSoup, 8);
-      lunch = { type:'normal', main, meat, veg, beanEgg, soup };
-    }
-
-    return { ...d, amSnack, dairyItem, pmSnack, lunch };
-  });
-
-  generatedMenu = { rocYear, month, adYear, school, days: menuDays };
-  renderMenuTable(generatedMenu);
-  document.getElementById('btnExport').style.display = '';
-  document.getElementById('btnPdf').style.display = '';
-  document.getElementById('btnSaveHistory').style.display = '';
-  hideLoading();
-}
-
-// ══════════════════════════════════════════════════════════
-// 渲染菜單表格
-// ══════════════════════════════════════════════════════════
-function renderMenuTable(menu) {
-  const { rocYear, month, school, days } = menu;
-  const area = document.getElementById('menuArea');
-
-  let html = `<div class="card" style="padding:0;overflow:hidden">
-  <div style="padding:12px 20px;background:var(--green-xl);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-size:15px;font-weight:700;color:var(--green-d)">${school}　${rocYear}年${month}月份　餐點表</div>
-      <div style="font-size:11px;color:var(--text2);margin-top:2px">點擊儲存格可手動修改　・　週五特餐：主食＋湯品</div>
-    </div>
-  </div>
-  <div class="menu-wrap">
-  <table class="menu-table">
-  <thead><tr>
-    <th style="width:80px">日期</th><th style="width:36px">星期</th>
-    <th style="min-width:130px">上午點心</th>
-    <th style="min-width:200px">午　　餐</th>
-    <th style="min-width:120px">下午點心</th>
-    <th style="min-width:200px">食材內容</th>
-  </tr></thead><tbody>`;
-
-  days.forEach(d => {
-    const dayLabel = `${month}月${d.day}日`;
-    if (d.type === 'weekend') {
-      html += `<tr class="row-wkd">
-        <td style="text-align:center">${dayLabel}</td>
-        <td style="text-align:center">${d.dayName}</td>
-        <td colspan="4" style="text-align:center;color:var(--gray-d);font-size:11px">放　假</td>
-      </tr>`;
-      return;
-    }
-    if (d.type === 'holiday') {
-      html += `<tr class="row-hol">
-        <td style="text-align:center">${dayLabel}</td>
-        <td style="text-align:center">${d.dayName}</td>
-        <td colspan="4">${d.holName}（放假）</td>
-      </tr>`;
-      return;
-    }
-
-    const l = d.lunch;
-    const amText = (d.amSnack ? d.amSnack.name : '—') + (d.dairyItem ? `＋${d.dairyItem.name}` : '');
-
-    let lunchText = '';
-    let ingItems = [];
-    if (l.type === 'special') {
-      lunchText = `${l.main ? l.main.name : '—'}<br><span style="color:var(--text2)">${l.soup ? l.soup.name : '—'}</span>`;
-      ingItems = [d.amSnack, l.main, l.soup, d.pmSnack];
-    } else {
-      lunchText = `${l.main ? l.main.name : '—'}<br>${l.meat ? l.meat.name : '—'}<br>${l.veg ? l.veg.name : '—'}<br>${l.beanEgg ? l.beanEgg.name : '—'}<br><span style="color:var(--text2)">${l.soup ? l.soup.name : '—'}</span>`;
-      ingItems = [d.amSnack, l.main, l.meat, l.veg, l.beanEgg, l.soup, d.pmSnack];
-    }
-
-    const pmText = `${d.pmSnack ? d.pmSnack.name : '—'}<br><span style="color:var(--text2);font-size:11px">季節水果</span>`;
-
-    // 合併食材
-    const seen = new Set(); const ingList = [];
-    ingItems.forEach(it => {
-      if (!it || !it.ingredients) return;
-      it.ingredients.split('、').forEach(i => {
-        i = i.trim();
-        if (i && !seen.has(i)) { seen.add(i); ingList.push(i); }
-      });
-    });
-    const ingText = ingList.join('、');
-
-    const rowCls = d.type === 'fri' ? 'row-fri' : 'row-work';
-    html += `<tr class="${rowCls}">
-      <td style="text-align:center;white-space:nowrap">${dayLabel}</td>
-      <td style="text-align:center">${d.dayName}</td>
-      <td class="cell-edit" onclick="editCell(this)">${amText}</td>
-      <td class="cell-edit" onclick="editCell(this)">${lunchText}</td>
-      <td class="cell-edit" onclick="editCell(this)">${pmText}</td>
-      <td style="font-size:11px;color:var(--green-d)">${ingText}</td>
-    </tr>`;
-  });
-
-  html += '</tbody></table></div></div>';
-  area.innerHTML = html;
-}
-
-function editCell(td) {
-  if (td.querySelector('textarea')) return;
-  const cur = td.innerText;
-  const ta = document.createElement('textarea');
-  ta.value = cur;
-  td.innerHTML = '';
-  td.appendChild(ta);
-  ta.focus();
-  ta.addEventListener('blur', () => {
-    const val = ta.value.trim() || cur;
-    td.innerHTML = val.replace(/\n/g,'<br>');
-  });
-}
-
-// ══════════════════════════════════════════════════════════
-// 匯出 PDF（瀏覽器直接列印，完整格式）
-// ══════════════════════════════════════════════════════════
-function exportPdf() {
-  if (!generatedMenu) return;
-  const { rocYear, month, school, days } = generatedMenu;
-
-  // 建立列印用 HTML 區塊
-  let old = document.getElementById('pdf-print-area');
-  if (old) old.remove();
-
-  const div = document.createElement('div');
-  div.id = 'pdf-print-area';
-  div.style.display = 'none';
-
-  // 標題區
-  let html = `
-  <div class="pdf-header">
-    <div class="pdf-school">${school}</div>
-    <div class="pdf-month">${rocYear} 年 ${month} 月份　餐點表</div>
-  </div>
-  <table class="pdf-table">
-  <thead><tr>
-    <th class="pdf-cell-date">日期</th>
-    <th class="pdf-cell-week">星期</th>
-    <th class="pdf-cell-am">上午點心</th>
-    <th class="pdf-cell-lunch">午　　餐</th>
-    <th class="pdf-cell-pm">下午點心</th>
-  </tr></thead><tbody>`;
-
-  let alt = 0;
-  days.forEach(d => {
-    const dayLabel = `${month}月${d.day}日`;
-
-    if (d.type === 'weekend') {
-      html += `<tr class="pdf-row-wkd">
-        <td class="pdf-cell-date">${dayLabel}</td>
-        <td class="pdf-cell-week">${d.dayName}</td>
-        <td colspan="3" style="text-align:center;color:#9E9E9E;font-style:italic">放　假</td>
-      </tr>`;
-      return;
-    }
-
-    if (d.type === 'holiday') {
-      html += `<tr class="pdf-row-hol">
-        <td class="pdf-cell-date">${dayLabel}</td>
-        <td class="pdf-cell-week">${d.dayName}</td>
-        <td colspan="3" style="text-align:center">${d.holName}（放假）</td>
-      </tr>`;
-      return;
-    }
-
-    const rowCls = alt % 2 === 0 ? 'pdf-row-work' : 'pdf-row-alt';
-    alt++;
-
-    const l = d.lunch || {};
-    const amText = (d.amSnack ? d.amSnack.name : '—') + (d.dairyItem ? `＋${d.dairyItem.name}` : '');
-
-    let lunchText = '';
-    if (l.type === 'special') {
-      lunchText = `${l.main ? l.main.name : '—'}　${l.soup ? l.soup.name : '—'}`;
-    } else {
-      lunchText = [
-        l.main    ? l.main.name    : '',
-        l.meat    ? l.meat.name    : '',
-        l.veg     ? l.veg.name     : '',
-        l.beanEgg ? l.beanEgg.name : '',
-        l.soup    ? l.soup.name    : '',
-      ].filter(Boolean).join('　');
-    }
-
-    const pmText = `${d.pmSnack ? d.pmSnack.name : '—'}　季節水果`;
-
-    html += `<tr class="${rowCls}">
-      <td class="pdf-cell-date">${dayLabel}</td>
-      <td class="pdf-cell-week">${d.dayName}</td>
-      <td class="pdf-cell-am">${amText}</td>
-      <td class="pdf-cell-lunch">${lunchText}</td>
-      <td class="pdf-cell-pm">${pmText}</td>
-    </tr>`;
-  });
-
-  html += `</tbody></table>
-  <div class="pdf-footer">※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。</div>`;
-
-  div.innerHTML = html;
-  document.body.appendChild(div);
-
-  // 暫時修改 title 控制 PDF 檔名
-  const originalTitle = document.title;
-  document.title = `${school}_${rocYear}年${month}月份_餐點表`;
-
-  // 觸發列印
-  window.print();
-
-  // 列印後還原
-  setTimeout(() => {
-    document.title = originalTitle;
-    div.remove();
-  }, 1000);
-}
-
-// 匯出 Excel（呼叫 Apps Script 產生正式格式 xlsx）
-// ══════════════════════════════════════════════════════════
-async function exportExcel() {
-  if (!generatedMenu) return;
-
-  showLoading('產生 Excel 中⋯');
-  document.getElementById('btnExport').disabled = true;
-
-  try {
-    // 動態載入 ExcelJS
-    if (typeof ExcelJS === 'undefined') {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-
-    const { rocYear, month, school, days } = generatedMenu;
-
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet(`${rocYear}年${month}月`);
-
-    // 欄寬
-    ws.columns = [
-      { width: 10 },  // 日期
-      { width: 6  },  // 星期
-      { width: 18 },  // 上午點心
-      { width: 36 },  // 午餐
-      { width: 22 },  // 下午點心
-      { width: 44 },  // 食材內容
-    ];
-
+    // 顏色常數
     const C = {
-      titleBg:'2E7D32', titleFg:'FFFFFF',
-      subBg:'388E3C',
-      hintBg:'F1F8E9', hintFg:'1B5E20',
-      hdrBg:'A5D6A7',  hdrFg:'1B5E20',
-      holBg:'FFCDD2',  holFg:'B71C1C',
-      wkdBg:'F5F5F5',  wkdFg:'9E9E9E',
-      row1:'FFFFFF',   row2:'F1F8E9',
-      ingBg:'E8F5E9',  ingFg:'2E7D32',
-      noteFg:'757575', noteBg:'FAFAFA',
+      titleBg: '#2E7D32', titleFg: '#FFFFFF',
+      subBg:   '#388E3C',
+      hintBg:  '#F1F8E9', hintFg:  '#1B5E20',
+      hdrBg:   '#A5D6A7', hdrFg:   '#1B5E20',
+      holBg:   '#FFCDD2', holFg:   '#B71C1C',
+      wkdBg:   '#F5F5F5', wkdFg:   '#9E9E9E',
+      row1:    '#FFFFFF', row2:    '#F1F8E9',
+      ingBg:   '#E8F5E9', ingFg:   '#2E7D32',
+      noteBg:  '#FAFAFA', noteFg:  '#757575',
     };
 
-    const bdr = { top:{style:'thin',color:{argb:'FFC8E6C9'}}, bottom:{style:'thin',color:{argb:'FFC8E6C9'}}, left:{style:'thin',color:{argb:'FFC8E6C9'}}, right:{style:'thin',color:{argb:'FFC8E6C9'}} };
-    const bdrHd = { top:{style:'thin',color:{argb:'FF81C784'}}, bottom:{style:'thin',color:{argb:'FF81C784'}}, left:{style:'thin',color:{argb:'FF81C784'}}, right:{style:'thin',color:{argb:'FF81C784'}} };
+    // 建立暫存試算表
+    const tmpSS = SpreadsheetApp.create(`_tmp_menu_${rocYear}_${month}`);
+    const ws    = tmpSS.getActiveSheet();
+    ws.setName(`${rocYear}年${month}月`);
 
-    const setRow = (row, values, fgColor, bgColor, bold, size, hAlign, border, wrapText) => {
-      values.forEach((v, i) => {
-        const cell = row.getCell(i + 1);
-        cell.value = v;
-        cell.font = { name:'Arial', bold:!!bold, color:{argb:'FF'+fgColor}, size: size||10 };
-        cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+bgColor} };
-        cell.alignment = { horizontal: hAlign||'center', vertical:'middle', wrapText:!!wrapText };
-        cell.border = border || bdr;
-      });
-    };
+    // 欄寬（單位：像素）
+    ws.setColumnWidth(1, 80);   // 日期
+    ws.setColumnWidth(2, 48);   // 星期
+    ws.setColumnWidth(3, 144);  // 上午點心
+    ws.setColumnWidth(4, 260);  // 午餐
+    ws.setColumnWidth(5, 168);  // 下午點心
+    ws.setColumnWidth(6, 336);  // 食材內容
+
+    let currentRow = 1;
 
     // ── 第1列：幼兒園名稱 ──
-    const r1 = ws.addRow([school,'','','','','']);
-    ws.mergeCells(`A1:F1`);
-    setRow(r1, [school], C.titleFg, C.titleBg, true, 16, 'center', bdrHd);
-    r1.height = 36;
+    const r1 = ws.getRange(currentRow, 1, 1, 6);
+    ws.getRange(currentRow, 1).setValue(school);
+    r1.merge();
+    r1.setBackground(C.titleBg)
+      .setFontColor(C.titleFg)
+      .setFontSize(16)
+      .setFontWeight('bold')
+      .setFontFamily('Arial')
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+    ws.setRowHeight(currentRow, 40);
+    currentRow++;
 
     // ── 第2列：年月副標題 ──
-    const r2 = ws.addRow([`${rocYear} 年 ${month} 月份　餐點表`,'','','','','']);
-    ws.mergeCells(`A2:F2`);
-    setRow(r2, [`${rocYear} 年 ${month} 月份　餐點表`], C.titleFg, C.subBg, true, 13, 'center', bdrHd);
-    r2.height = 28;
+    const r2 = ws.getRange(currentRow, 1, 1, 6);
+    ws.getRange(currentRow, 1).setValue(`${rocYear} 年 ${month} 月份　餐點表`);
+    r2.merge();
+    r2.setBackground(C.subBg)
+      .setFontColor(C.titleFg)
+      .setFontSize(13)
+      .setFontWeight('bold')
+      .setFontFamily('Arial')
+      .setHorizontalAlignment('center')
+      .setVerticalAlignment('middle');
+    ws.setRowHeight(currentRow, 30);
+    currentRow++;
 
-    // ── 第3列：欄位標題 ──
-    const r4 = ws.addRow(['日期','星期','上午點心','午　　餐','下午點心','食　材　內　容']);
-    r4.eachCell(cell => {
-      cell.font = { name:'Arial', bold:true, size:11, color:{argb:'FF'+C.hdrFg} };
-      cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.hdrBg} };
-      cell.alignment = { horizontal:'center', vertical:'middle' };
-      cell.border = bdrHd;
-    });
-    r4.height = 22;
-    ws.views = [{ state:'frozen', ySplit:3 }];
+    // ── 第3列：說明 ──
+    const r3 = ws.getRange(currentRow, 1, 1, 6);
+    ws.getRange(currentRow, 1).setValue(
+      '◆ 午餐三菜一湯：主食＋肉類＋青菜＋豆蛋＋湯品　◆ 週五特餐：主食＋湯品　◆ 下午點心另附季節水果　◆ 每週提供乳製品一次'
+    );
+    r3.merge();
+    r3.setBackground(C.hintBg)
+      .setFontColor(C.hintFg)
+      .setFontSize(9)
+      .setFontStyle('italic')
+      .setFontFamily('Arial')
+      .setHorizontalAlignment('left')
+      .setVerticalAlignment('middle');
+    ws.setRowHeight(currentRow, 18);
+    currentRow++;
+
+    // ── 第4列：欄位標題 ──
+    const headers = ['日期','星期','上午點心','午　　餐','下午點心','食　材　內　容'];
+    const rHdr = ws.getRange(currentRow, 1, 1, 6);
+    ws.getRange(currentRow, 1, 1, 6).setValues([headers]);
+    rHdr.setBackground(C.hdrBg)
+        .setFontColor(C.hdrFg)
+        .setFontSize(11)
+        .setFontWeight('bold')
+        .setFontFamily('Arial')
+        .setHorizontalAlignment('center')
+        .setVerticalAlignment('middle');
+    ws.setRowHeight(currentRow, 24);
+    currentRow++;
 
     // ── 資料列 ──
     let alt = 0;
-    let rowIdx = 4;
+    rows.forEach(row => {
+      const { date, weekday, am, lunch, pm, ing, rowType, holName } = row;
 
-    days.forEach(d => {
-      const dayLabel = `${month}月${d.day}日`;
+      if (rowType === 'weekend') {
+        // 週六日
+        ws.getRange(currentRow, 1).setValue(date);
+        ws.getRange(currentRow, 2).setValue(weekday);
+        ws.getRange(currentRow, 3, 1, 4).merge();
+        ws.getRange(currentRow, 3).setValue('放　假');
+        const rWkd = ws.getRange(currentRow, 1, 1, 6);
+        rWkd.setBackground(C.wkdBg).setFontColor(C.wkdFg)
+            .setFontFamily('Arial').setFontSize(10)
+            .setVerticalAlignment('middle');
+        ws.getRange(currentRow, 3).setHorizontalAlignment('center');
+        ws.setRowHeight(currentRow, 18);
 
-      if (d.type === 'weekend') {
-        const r = ws.addRow([dayLabel, d.dayName, '放　假', '', '', '']);
-        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
-        r.eachCell(cell => {
-          cell.font = { name:'Arial', size:10, color:{argb:'FF'+C.wkdFg} };
-          cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.wkdBg} };
-          cell.alignment = { horizontal:'center', vertical:'middle' };
-          cell.border = bdr;
-        });
-        r.getCell(3).alignment = { horizontal:'center', vertical:'middle' };
-        r.height = 18;
-        rowIdx++;
-        return;
-      }
-
-      if (d.type === 'holiday') {
-        const r = ws.addRow([dayLabel, d.dayName, `${d.holName}（放假）`, '', '', '']);
-        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
-        r.eachCell(cell => {
-          cell.font = { name:'Arial', bold:true, size:11, color:{argb:'FF'+C.holFg} };
-          cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.holBg} };
-          cell.alignment = { horizontal:'center', vertical:'middle' };
-          cell.border = bdr;
-        });
-        r.height = 22;
-        rowIdx++;
-        return;
-      }
-
-      // 一般工作日
-      const rowBg = alt % 2 === 0 ? C.row1 : C.row2;
-      alt++;
-
-      const l = d.lunch || {};
-      const amText = (d.amSnack ? d.amSnack.name : '—') + (d.dairyItem ? `＋${d.dairyItem.name}` : '');
-
-      let lunchText = '';
-      let ingItems = [];
-      if (l.type === 'special') {
-        lunchText = `${l.main ? l.main.name : '—'}\n${l.soup ? l.soup.name : '—'}`;
-        ingItems = [d.amSnack, l.main, l.soup, d.pmSnack];
-      } else {
-        lunchText = [l.main, l.meat, l.veg, l.beanEgg, l.soup]
-          .filter(Boolean).map(x => x.name).join('\n');
-        ingItems = [d.amSnack, l.main, l.meat, l.veg, l.beanEgg, l.soup, d.pmSnack];
-      }
-
-      const pmText = `${d.pmSnack ? d.pmSnack.name : '—'}\n季節水果`;
-
-      const seen = new Set(); const ingList = [];
-      ingItems.forEach(it => {
-        if (!it || !it.ingredients) return;
-        it.ingredients.split('、').forEach(i => {
-          i = i.trim();
-          if (i && !seen.has(i)) { seen.add(i); ingList.push(i); }
-        });
-      });
-
-      const r = ws.addRow([dayLabel, d.dayName, amText, lunchText, pmText, ingList.join('、')]);
-
-      // 日期、星期
-      [1,2].forEach(ci => {
-        const cell = r.getCell(ci);
-        cell.font = { name:'Arial', size:10, color:{argb:'FF333333'} };
-        cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg} };
-        cell.alignment = { horizontal:'center', vertical:'top' };
-        cell.border = bdr;
-      });
-
-      // 上午點心、午餐、下午點心
-      [3,4,5].forEach(ci => {
-        const cell = r.getCell(ci);
-        cell.font = { name:'Arial', size:10, color:{argb:'FF333333'} };
-        cell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg} };
-        cell.alignment = { horizontal:'left', vertical:'top', wrapText:true, indent:1 };
-        cell.border = bdr;
-      });
-
-      // 食材欄
-      const ingCell = r.getCell(6);
-      ingCell.font = { name:'Arial', size:9, color:{argb:'FF'+C.ingFg} };
-      ingCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.ingBg} };
-      ingCell.alignment = { horizontal:'left', vertical:'top', wrapText:true, indent:1 };
-      ingCell.border = bdr;
-
-      // 列高依午餐行數
-      const lineCount = lunchText.split('\n').length;
-      r.height = Math.max(lineCount * 18, 54);
-      rowIdx++;
-    });
-
-    // ── 備註列 ──
-    const rNote = ws.addRow(['※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。','','','','','']);
-    ws.mergeCells(`A${rowIdx}:F${rowIdx}`);
-    const noteCell = rNote.getCell(1);
-    noteCell.value = '※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。';
-    noteCell.font = { name:'Arial', size:9, italic:true, color:{argb:'FF'+C.noteFg} };
-    noteCell.fill = { type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.noteBg} };
-    noteCell.alignment = { horizontal:'left', vertical:'middle', indent:1 };
-    noteCell.border = bdr;
-    rNote.height = 20;
-
-    // ── 下載 ──
-    const buf = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `${school}_${rocYear}年${month}月份_餐點表.xlsx`;
-    a.click();
-
-    showMsg('generateMsg', '✅ Excel 已產生，開始下載！', 'success');
-
-  } catch(e) {
-    showMsg('generateMsg', '❌ 匯出失敗：' + e.message, 'error');
-  } finally {
-    document.getElementById('btnExport').disabled = false;
-    hideLoading();
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-// 儲存歷史菜單
-// ══════════════════════════════════════════════════════════
-async function saveToHistory() {
-  if (!generatedMenu) return;
-  const { adYear, month } = generatedMenu;
-  const yearMonth = `${adYear}-${String(month).padStart(2,'0')}`;
-  const rocYear = generatedMenu.rocYear;
-
-  // 先查詢該月是否已有資料
-  showLoading('確認歷史資料⋯');
-  try {
-    const check = await apiFetch({ action:'getHistory', yearMonth });
-    hideLoading();
-    if (!check.error && check.length > 0) {
-      // 已有資料，跳出確認
-      const confirmed = confirm(
-        `${rocYear}年${month}月份 已有 ${check.length} 筆歷史記錄。\n\n` +
-        `重新儲存將會覆蓋舊資料，確定要繼續嗎？`
-      );
-      if (!confirmed) return;
-    }
-  } catch(e) {
-    hideLoading();
-    // 查詢失敗就直接繼續儲存
-  }
-
-  const histRows = generatedMenu.days
-    .filter(d => d.type !== 'weekend' && d.type !== 'holiday')
-    .map(d => {
-      const l = d.lunch || {};
-      return {
-        date:          d.date,
-        weekday:       d.dayName,
-        morningSnack:  (d.amSnack ? d.amSnack.name : '') + (d.dairyItem ? `＋${d.dairyItem.name}` : ''),
-        lunchMain:     l.main    ? l.main.name    : '',
-        lunchMeat:     l.meat    ? l.meat.name    : '',
-        lunchVeg:      l.veg     ? l.veg.name     : '',
-        lunchBeanEgg:  l.beanEgg ? l.beanEgg.name : '',
-        lunchSoup:     l.soup    ? l.soup.name    : '',
-        afternoonSnack:d.pmSnack ? d.pmSnack.name : '',
-      };
-    });
-
-  showLoading('儲存歷史菜單⋯');
-  try {
-    const data = JSON.stringify({ yearMonth, rows: histRows });
-    const res = await apiFetch({ action:'saveHistory', data });
-    if (res.error) throw new Error(res.error);
-    showMsg('generateMsg', `✅ 已儲存 ${res.count} 筆資料至歷史菜單！`, 'success');
-  } catch(e) {
-    showMsg('generateMsg', '❌ 儲存失敗：' + e.message, 'error');
-  } finally {
-    hideLoading();
-  }
-}
-
-// ══════════════════════════════════════════════════════════
-// 餐點資料庫
-// ══════════════════════════════════════════════════════════
-function renderDb() {
-  if (!dbData) return;
-  const filter = document.getElementById('filterCat').value;
-  const cats = filter === 'all' ? Object.keys(CAT_LABEL) : [filter];
-  const tbody = document.getElementById('dbTable');
-  let html = `<thead><tr>
-    <th>餐別</th><th>品項名稱</th><th>食材內容</th><th>備註</th><th style="width:60px">狀態</th><th style="width:60px"></th>
-  </tr></thead><tbody>`;
-  let total = 0;
-  cats.forEach(cat => {
-    const items = dbData[cat] || [];
-    items.forEach(item => {
-      const extra = getItemExtra(cat, item);
-      html += `<tr>
-        <td><span class="badge badge-on">${CAT_LABEL[cat]}</span></td>
-        <td style="font-weight:600">${item.name}</td>
-        <td style="font-size:11px;color:var(--text2)">${item.ingredients || ''}</td>
-        <td>${extra}</td>
-        <td><span class="badge badge-on">啟用</span></td>
-        <td><button class="btn btn-sm btn-danger" onclick="disableItem('${cat}','${item.name}')">停用</button></td>
-      </tr>`;
-      total++;
-    });
-  });
-  html += '</tbody>';
-  tbody.innerHTML = html;
-  document.getElementById('dbCount').textContent = `共 ${total} 筆`;
-}
-
-function getItemExtra(cat, item) {
-  const parts = [];
-  if (cat === 'morning_snack' || cat === 'afternoon_snack') {
-    if (item.category) parts.push(`<span class="badge" style="background:#F3E5F5;color:#6A1B9A">${item.category}</span>`);
-    if (item.taste) parts.push(`<span class="badge" style="background:#E8EAF6;color:#283593">${item.taste}</span>`);
-    if (item.highFat) parts.push(`<span class="badge badge-warn">高油糖鹽</span>`);
-  }
-  if (cat === 'lunch_main' && item.wholegrain) parts.push(`<span class="badge badge-on">未精製</span>`);
-  if (cat === 'lunch_meat') {
-    const cls = item.meatType==='豬'?'badge-meat-pig':item.meatType==='雞'?'badge-meat-chicken':'badge-meat-seafood';
-    if (item.meatType) parts.push(`<span class="badge ${cls}">${item.meatType}</span>`);
-    if (item.semiProcessed) parts.push(`<span class="badge badge-semi">半成品</span>`);
-  }
-  if (cat === 'lunch_veg') {
-    if (item.darkColor) parts.push(`<span class="badge badge-dark">深色</span>`);
-    if (item.season) parts.push(`<span class="badge" style="background:#E8F5E9;color:#2E7D32">${item.season}</span>`);
-  }
-  if (cat === 'lunch_bean_egg') {
-    const cls = item.beanType==='豆製品'?'badge-bean':'badge-egg';
-    if (item.beanType) parts.push(`<span class="badge ${cls}">${item.beanType}</span>`);
-  }
-  return parts.join(' ');
-}
-
-async function addItem() {
-  const cat  = document.getElementById('addCat').value;
-  const name = document.getElementById('addName').value.trim();
-  const ing  = document.getElementById('addIng').value.trim();
-  if (!name) { showMsg('addMsg','請輸入品項名稱','error'); return; }
-  showLoading('新增品項⋯');
-  try {
-    const rowData = [
-      (dbData[cat]||[]).length + 1,
-      name, ing, '', '', '啟用'
-    ];
-    const res = await apiPost({ action:'addItem', sheetKey:cat, rowData });
-    if (res.error) throw new Error(res.error);
-    // 更新本地資料
-    if (!dbData[cat]) dbData[cat] = [];
-    dbData[cat].push({ name, ingredients:ing });
-    document.getElementById('addName').value = '';
-    document.getElementById('addIng').value = '';
-    showMsg('addMsg',`✅ 已新增：${name}`,'success');
-    renderDb();
-  } catch(e) {
-    showMsg('addMsg','❌ 新增失敗：'+e.message,'error');
-  }
-  hideLoading();
-}
-
-async function disableItem(cat, name) {
-  if (!confirm(`確定要停用「${name}」嗎？`)) return;
-  showLoading('更新狀態⋯');
-  try {
-    const res = await apiPost({ action:'updateStatus', sheetKey:cat, itemName:name, status:'停用' });
-    if (res.error) throw new Error(res.error);
-    dbData[cat] = (dbData[cat]||[]).filter(it => it.name !== name);
-    renderDb();
-    showMsg('addMsg',`已停用：${name}`,'success');
-  } catch(e) {
-    showMsg('addMsg','❌ 操作失敗：'+e.message,'error');
-  }
-  hideLoading();
-}
-
-// ══════════════════════════════════════════════════════════
-// 假日設定
-// ══════════════════════════════════════════════════════════
-function renderHolidays() {
-  if (!dbData) return;
-  const tbody = document.getElementById('hdTable');
-  const hols = dbData.holidays || [];
-  if (!hols.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:20px">尚無假日設定</td></tr>';
-    return;
-  }
-  let html = `<thead><tr><th>日期</th><th>假日名稱</th><th>類型</th><th style="width:60px"></th></tr></thead><tbody>`;
-  hols.forEach(h => {
-    const cls = h.type === '補班日' ? 'badge' : 'badge badge-warn';
-    const bg  = h.type === '補班日' ? 'background:#E8EAF6;color:#283593' : '';
-    html += `<tr>
-      <td>${h.date}</td>
-      <td style="font-weight:600">${h.name}</td>
-      <td><span class="${cls}" style="${bg}">${h.type}</span></td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteHoliday('${h.date}')">刪除</button></td>
-    </tr>`;
-  });
-  html += '</tbody>';
-  tbody.innerHTML = html;
-}
-
-window.addHoliday = async function() {
-  const date = document.getElementById('hdDate').value.trim();
-  const name = document.getElementById('hdName').value.trim();
-  const type = document.getElementById('hdType').value;
-  if (!date || !name) { showMsg('hdMsg','請填寫日期與名稱','error'); return; }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) { showMsg('hdMsg','日期格式應為 YYYY-MM-DD','error'); return; }
-  showLoading('新增假日⋯');
-  try {
-    const res = await apiPost({ action:'addHoliday', name, date, type });
-    if (res.error) throw new Error(res.error);
-    if (!dbData.holidays) dbData.holidays = [];
-    dbData.holidays.push({ name, date, type });
-    dbData.holidays.sort((a,b) => a.date.localeCompare(b.date));
-    document.getElementById('hdDate').value = '';
-    document.getElementById('hdName').value = '';
-    showMsg('hdMsg',`✅ 已新增：${name}（${type}）`,'success');
-    renderHolidays();
-  } catch(e) {
-    showMsg('hdMsg','❌ 新增失敗：'+e.message,'error');
-  }
-  hideLoading();
-}
-
-async function deleteHoliday(date) {
-  if (!confirm(`確定要刪除 ${date} 的假日設定嗎？`)) return;
-  showLoading('刪除假日⋯');
-  try {
-    const res = await apiPost({ action:'deleteHoliday', date });
-    if (res.error) throw new Error(res.error);
-    dbData.holidays = (dbData.holidays||[]).filter(h => h.date !== date);
-    showMsg('hdMsg','✅ 已刪除','success');
-    renderHolidays();
-  } catch(e) {
-    showMsg('hdMsg','❌ 刪除失敗：'+e.message,'error');
-  }
-  hideLoading();
-}
-
-// ══════════════════════════════════════════════════════════
-// 歷史菜單
-// ══════════════════════════════════════════════════════════
-async function loadHistory() {
-  const rocYear = parseInt(document.getElementById('histYear').value);
-  const adYear  = rocYear + 1911;
-  const month   = document.getElementById('histMonth').value; // 已是 01~12 格式
-  const ym      = `${adYear}-${month}`;
-  showLoading('載入歷史菜單⋯');
-  try {
-    const res = await apiFetch({ action:'getHistory', yearMonth:ym });
-    if (res.error) throw new Error(res.error);
-    historyData = { yearMonth:ym, rows:res };
-    const area = document.getElementById('historyArea');
-    if (!res.length) {
-      area.innerHTML = '<div class="msg msg-warn">此月份尚無歷史記錄</div>';
-      document.getElementById('btnDlHistory').style.display = 'none';
-    } else {
-      let html = `<div style="font-size:13px;color:var(--text2);margin-bottom:8px">共 ${res.length} 筆記錄</div>`;
-      html += `<div class="menu-wrap"><table class="menu-table"><thead><tr>
-        <th>日期</th><th>星期</th><th>上午點心</th><th>午餐主食</th><th>肉類</th><th>青菜</th><th>豆蛋</th><th>湯品</th><th>下午點心</th>
-      </tr></thead><tbody>`;
-      res.forEach(r => {
-        html += `<tr class="row-work">
-          <td style="text-align:center">${r.date}</td>
-          <td style="text-align:center">${r.weekday}</td>
-          <td>${r.morningSnack||''}</td><td>${r.lunchMain||''}</td>
-          <td>${r.lunchMeat||''}</td><td>${r.lunchVeg||''}</td>
-          <td>${r.lunchBeanEgg||''}</td><td>${r.lunchSoup||''}</td>
-          <td>${r.afternoonSnack||''}</td>
-        </tr>`;
-      });
-      html += '</tbody></table></div>';
-      area.innerHTML = html;
-      document.getElementById('btnDlHistory').style.display = '';
-    }
-  } catch(e) {
-    document.getElementById('historyArea').innerHTML = `<div class="msg msg-error">載入失敗：${e.message}</div>`;
-  }
-  hideLoading();
-}
-
-async function downloadHistory() {
-  if (!historyData || !historyData.rows.length) return;
-
-  showLoading('產生 Excel 中⋯');
-
-  try {
-    // 動態載入 ExcelJS
-    if (typeof ExcelJS === 'undefined') {
-      await new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js';
-        s.onload = resolve; s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
-
-    // 從 yearMonth 取得年月資訊
-    const [adYear, monthPadded] = historyData.yearMonth.split('-');
-    const month = parseInt(monthPadded);
-    const rocYear = parseInt(adYear) - 1911;
-    const school = document.getElementById('schoolName').value || '小鳥幼兒園';
-
-    const wb = new ExcelJS.Workbook();
-    const ws = wb.addWorksheet(`${rocYear}年${month}月`);
-
-    // 欄寬
-    ws.columns = [
-      {width:10},{width:6},{width:18},{width:36},{width:22},{width:44}
-    ];
-
-    const C = {
-      titleBg:'2E7D32', titleFg:'FFFFFF', subBg:'388E3C',
-      hdrBg:'A5D6A7', hdrFg:'1B5E20',
-      holBg:'FFCDD2', holFg:'B71C1C',
-      wkdBg:'F5F5F5', wkdFg:'9E9E9E',
-      row1:'FFFFFF', row2:'F1F8E9',
-      ingBg:'E8F5E9', ingFg:'2E7D32',
-      noteFg:'757575', noteBg:'FAFAFA',
-    };
-    const bdr  = {top:{style:'thin',color:{argb:'FFC8E6C9'}},bottom:{style:'thin',color:{argb:'FFC8E6C9'}},left:{style:'thin',color:{argb:'FFC8E6C9'}},right:{style:'thin',color:{argb:'FFC8E6C9'}}};
-    const bdrHd= {top:{style:'thin',color:{argb:'FF81C784'}},bottom:{style:'thin',color:{argb:'FF81C784'}},left:{style:'thin',color:{argb:'FF81C784'}},right:{style:'thin',color:{argb:'FF81C784'}}};
-
-    const setCell = (cell, val, fontColor, bgColor, bold, size, hAlign, border, wrap) => {
-      cell.value = val;
-      cell.font = {name:'Arial', bold:!!bold, color:{argb:'FF'+fontColor}, size:size||10};
-      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+bgColor}};
-      cell.alignment = {horizontal:hAlign||'center', vertical:'middle', wrapText:!!wrap};
-      cell.border = border || bdr;
-    };
-
-    // 第1列：幼兒園名稱
-    const r1 = ws.addRow([school,'','','','','']);
-    ws.mergeCells('A1:F1');
-    setCell(r1.getCell(1), school, C.titleFg, C.titleBg, true, 16, 'center', bdrHd);
-    r1.height = 36;
-
-    // 第2列：年月副標題
-    const r2 = ws.addRow([`${rocYear} 年 ${month} 月份　餐點表`,'','','','','']);
-    ws.mergeCells('A2:F2');
-    setCell(r2.getCell(1), `${rocYear} 年 ${month} 月份　餐點表`, C.titleFg, C.subBg, true, 13, 'center', bdrHd);
-    r2.height = 28;
-
-    // 第3列：欄位標題
-    const r3 = ws.addRow(['日期','星期','上午點心','午　　餐','下午點心','食　材　內　容']);
-    r3.eachCell(cell => {
-      cell.font = {name:'Arial', bold:true, size:11, color:{argb:'FF'+C.hdrFg}};
-      cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.hdrBg}};
-      cell.alignment = {horizontal:'center', vertical:'middle'};
-      cell.border = bdrHd;
-    });
-    r3.height = 22;
-    ws.views = [{state:'frozen', ySplit:3}];
-
-    // 資料列
-    let alt = 0;
-    let rowIdx = 4;
-
-    historyData.rows.forEach(r => {
-      const date   = r.date || '';
-      const wkday  = r.weekday || '';
-
-      // 判斷是否為六日或假日
-      const isWkd  = (wkday === '六' || wkday === '日');
-      const isHol  = r.morningSnack === '' && r.lunchMain === '' && !isWkd && wkday !== '';
-
-      // 從 date 取月日
-      let dayLabel = date;
-      if (date && date.includes('-')) {
-        const parts = date.split('-');
-        if (parts.length === 3) dayLabel = `${parseInt(parts[1])}月${parseInt(parts[2])}日`;
-      }
-
-      if (isWkd) {
-        const row = ws.addRow([dayLabel, wkday, '放　假', '', '', '']);
-        ws.mergeCells(`C${rowIdx}:F${rowIdx}`);
-        row.eachCell(cell => {
-          cell.font = {name:'Arial', size:10, color:{argb:'FF'+C.wkdFg}};
-          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.wkdBg}};
-          cell.alignment = {horizontal:'center', vertical:'middle'};
-          cell.border = bdr;
-        });
-        row.height = 18;
+      } else if (rowType === 'holiday') {
+        // 國定假日
+        ws.getRange(currentRow, 1).setValue(date);
+        ws.getRange(currentRow, 2).setValue(weekday);
+        ws.getRange(currentRow, 3, 1, 4).merge();
+        ws.getRange(currentRow, 3).setValue(`${holName}（放假）`);
+        const rHol = ws.getRange(currentRow, 1, 1, 6);
+        rHol.setBackground(C.holBg).setFontColor(C.holFg)
+            .setFontWeight('bold').setFontFamily('Arial').setFontSize(11)
+            .setVerticalAlignment('middle');
+        ws.getRange(currentRow, 3).setHorizontalAlignment('center');
+        ws.setRowHeight(currentRow, 22);
 
       } else {
+        // 一般工作日
         const rowBg = alt % 2 === 0 ? C.row1 : C.row2;
         alt++;
 
-        // 組合午餐文字
-        const lunchText = [r.lunchMain, r.lunchMeat, r.lunchVeg, r.lunchBeanEgg, r.lunchSoup]
-          .filter(Boolean).join('\n');
-        const pmText = r.afternoonSnack || '';
+        ws.getRange(currentRow, 1).setValue(date);
+        ws.getRange(currentRow, 2).setValue(weekday);
+        ws.getRange(currentRow, 3).setValue(am);
+        ws.getRange(currentRow, 4).setValue(lunch);
+        ws.getRange(currentRow, 5).setValue(pm);
+        ws.getRange(currentRow, 6).setValue(ing);
 
-        const exRow = ws.addRow([dayLabel, wkday, r.morningSnack||'', lunchText, pmText, '']);
+        // 共用樣式
+        ws.getRange(currentRow, 1, 1, 6)
+          .setBackground(rowBg)
+          .setFontFamily('Arial').setFontSize(10)
+          .setFontColor('#333333')
+          .setVerticalAlignment('top')
+          .setWrap(true);
 
-        [1,2].forEach(ci => {
-          const cell = exRow.getCell(ci);
-          cell.font = {name:'Arial', size:10, color:{argb:'FF333333'}};
-          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg}};
-          cell.alignment = {horizontal:'center', vertical:'top'};
-          cell.border = bdr;
-        });
-        [3,4,5].forEach(ci => {
-          const cell = exRow.getCell(ci);
-          cell.font = {name:'Arial', size:10, color:{argb:'FF333333'}};
-          cell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+rowBg}};
-          cell.alignment = {horizontal:'left', vertical:'top', wrapText:true, indent:1};
-          cell.border = bdr;
-        });
-        // 食材欄留空（歷史資料沒有食材）
-        const ingCell = exRow.getCell(6);
-        ingCell.font = {name:'Arial', size:9, color:{argb:'FF'+C.ingFg}};
-        ingCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.ingBg}};
-        ingCell.alignment = {horizontal:'left', vertical:'top', wrapText:true, indent:1};
-        ingCell.border = bdr;
+        // 日期、星期置中
+        ws.getRange(currentRow, 1, 1, 2).setHorizontalAlignment('center');
 
-        const lineCount = lunchText.split('\n').length;
-        exRow.height = Math.max(lineCount * 18, 54);
+        // 上午點心、午餐、下午點心靠左
+        ws.getRange(currentRow, 3, 1, 3).setHorizontalAlignment('left');
+
+        // 食材欄特別樣式
+        ws.getRange(currentRow, 6)
+          .setBackground(C.ingBg)
+          .setFontColor(C.ingFg)
+          .setFontSize(9)
+          .setHorizontalAlignment('left');
+
+        // 列高依午餐行數調整
+        const lineCount = (lunch || '').split('\n').filter(x => x).length;
+        ws.setRowHeight(currentRow, Math.max(lineCount * 18, 54));
       }
-      rowIdx++;
+
+      // 框線
+      ws.getRange(currentRow, 1, 1, 6)
+        .setBorder(true, true, true, true, true, true,
+                   '#C8E6C9', SpreadsheetApp.BorderStyle.SOLID);
+      currentRow++;
     });
 
-    // 備註列
-    const rNote = ws.addRow(['※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。','','','','','']);
-    ws.mergeCells(`A${rowIdx}:F${rowIdx}`);
-    const noteCell = rNote.getCell(1);
-    noteCell.value = '※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。';
-    noteCell.font = {name:'Arial', size:9, italic:true, color:{argb:'FF'+C.noteFg}};
-    noteCell.fill = {type:'pattern', pattern:'solid', fgColor:{argb:'FF'+C.noteBg}};
-    noteCell.alignment = {horizontal:'left', vertical:'middle', indent:1};
-    noteCell.border = bdr;
-    rNote.height = 20;
+    // ── 備註列 ──
+    const rNote = ws.getRange(currentRow, 1, 1, 6);
+    ws.getRange(currentRow, 1).setValue(
+      '※ 本菜單食材以當日實際供應為準，如有更動將另行通知。如孩子有特殊過敏需求，請主動告知班級老師。'
+    );
+    rNote.merge();
+    rNote.setBackground(C.noteBg)
+         .setFontColor(C.noteFg)
+         .setFontSize(9)
+         .setFontStyle('italic')
+         .setFontFamily('Arial')
+         .setHorizontalAlignment('left')
+         .setVerticalAlignment('middle')
+         .setWrap(true);
+    ws.setRowHeight(currentRow, 22);
 
-    // 下載
-    const buf  = await wb.xlsx.writeBuffer();
-    const blob = new Blob([buf], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const a    = document.createElement('a');
-    a.href     = URL.createObjectURL(blob);
-    a.download = `${school}_${rocYear}年${month}月份_餐點表.xlsx`;
-    a.click();
+    // 凍結前4列
+    ws.setFrozenRows(4);
 
-    showMsg('generateMsg', '✅ 歷史菜單 Excel 已下載！', 'success');
+    // 匯出為 xlsx Blob
+    const ssId  = tmpSS.getId();
+    const url   = `https://docs.google.com/spreadsheets/d/${ssId}/export?format=xlsx`;
+    const token = ScriptApp.getOAuthToken();
+    const res   = UrlFetchApp.fetch(url, {
+      headers: { Authorization: 'Bearer ' + token },
+      muteHttpExceptions: true,
+    });
 
-  } catch(e) {
-    showMsg('generateMsg', '❌ 下載失敗：' + e.message, 'error');
-  } finally {
-    hideLoading();
+    const blob = res.getBlob().setName(`${school}_${rocYear}年${month}月份_家長版餐點表.xlsx`);
+
+    // 存到 Drive 並取得下載連結
+    const folder = DriveApp.getRootFolder();
+    const files  = folder.getFilesByName(`${school}_${rocYear}年${month}月份_家長版餐點表.xlsx`);
+    while (files.hasNext()) files.next().setTrashed(true); // 刪除舊檔
+
+    const file = folder.createFile(blob);
+    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    const downloadUrl = `https://drive.google.com/uc?export=download&id=${file.getId()}`;
+
+    // 刪除暫存試算表
+    DriveApp.getFileById(ssId).setTrashed(true);
+
+    return ContentService
+      .createTextOutput(JSON.stringify({ success: true, downloadUrl }))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch(err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 // ══════════════════════════════════════════════════════════
-// 設定
+// 讀取所有資料庫
 // ══════════════════════════════════════════════════════════
-async function testConnection() {
-  showLoading('測試連線⋯');
+function getAllData() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const result = {};
+
+  const mealSheets = [
+    'morning_snack','afternoon_snack','dairy',
+    'lunch_main','lunch_special','lunch_meat',
+    'lunch_veg','lunch_bean_egg','lunch_soup'
+  ];
+
+  mealSheets.forEach(key => {
+    const ws = ss.getSheetByName(SHEETS[key]);
+    if (!ws) return;
+    const rows = ws.getDataRange().getValues();
+    result[key] = [];
+    for (let i = 3; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row[1]) continue;
+      const status = row[row.length - 1];
+      if (status === '停用') continue;
+      const item = { name: String(row[1]), ingredients: String(row[2] || '') };
+      if (key === 'morning_snack' || key === 'afternoon_snack') {
+        item.category = String(row[3] || '');
+        item.taste    = String(row[4] || '');
+        item.highFat  = String(row[5] || '') === '是';
+      }
+      if (key === 'lunch_main')     item.wholegrain    = String(row[3] || '') === '是';
+      if (key === 'lunch_meat') {
+        item.meatType      = String(row[3] || '');
+        item.semiProcessed = String(row[4] || '') === '是';
+      }
+      if (key === 'lunch_veg') {
+        item.darkColor = String(row[3] || '') === '是';
+        item.season    = String(row[4] || '');
+      }
+      if (key === 'lunch_bean_egg') item.beanType = String(row[3] || '');
+      result[key].push(item);
+    }
+  });
+
+  const hwSheet = ss.getSheetByName(SHEETS.holidays);
+  result.holidays = [];
+  if (hwSheet) {
+    const rows = hwSheet.getDataRange().getValues();
+    for (let i = 3; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row[2]) continue;
+      result.holidays.push({
+        name: String(row[1] || ''),
+        date: String(row[2] || ''),
+        type: String(row[3] || '放假日'),
+      });
+    }
+  }
+  return result;
+}
+
+// ══════════════════════════════════════════════════════════
+// 讀取歷史菜單
+// ══════════════════════════════════════════════════════════
+function getHistory(yearMonth) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName(SHEETS.history);
+  if (!ws) return [];
+  const rows = ws.getDataRange().getValues();
+  const result = [];
+
+  function normalizeYM(val) {
+    if (!val) return '';
+    if (val instanceof Date) {
+      return val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0');
+    }
+    const s = String(val).trim();
+    if (s.length > 10 && (s.includes('GMT') || s.includes('UTC'))) {
+      const d = new Date(s);
+      if (!isNaN(d)) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    const parts = s.split('-');
+    if (parts.length === 2) return parts[0] + '-' + parts[1].padStart(2, '0');
+    return s;
+  }
+
+  const targetYM = yearMonth ? normalizeYM(yearMonth) : '';
+  let startRow = -1;
+  for (let i = 0; i < rows.length; i++) {
+    const ym = normalizeYM(rows[i][0]);
+    if (/^\d{4}-\d{2}$/.test(ym)) { startRow = i; break; }
+  }
+  if (startRow === -1) return [];
+
+  for (let i = startRow; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row[0]) continue;
+    const rowYM = normalizeYM(row[0]);
+    if (targetYM && rowYM !== targetYM) continue;
+    // 將 date 欄的 Date 物件轉成 YYYY-MM-DD 字串
+    const dateVal = row[1];
+    let dateStr = '';
+    if (dateVal instanceof Date) {
+      dateStr = dateVal.getFullYear() + '-'
+        + String(dateVal.getMonth()+1).padStart(2,'0') + '-'
+        + String(dateVal.getDate()).padStart(2,'0');
+    } else {
+      dateStr = String(dateVal||'');
+    }
+    result.push({
+      yearMonth: rowYM, date: dateStr, weekday: String(row[2]||''),
+      morningSnack: String(row[3]||''), lunchMain: String(row[4]||''),
+      lunchMeat: String(row[5]||''), lunchVeg: String(row[6]||''),
+      lunchBeanEgg: String(row[7]||''), lunchSoup: String(row[8]||''),
+      afternoonSnack: String(row[9]||''),
+    });
+  }
+  return result;
+}
+
+function saveHistory(payload) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName(SHEETS.history);
+  if (!ws) return { error: '找不到歷史菜單分頁' };
+
+  function normalizeYM(val) {
+    if (!val) return '';
+    if (val instanceof Date) {
+      return val.getFullYear() + '-' + String(val.getMonth() + 1).padStart(2, '0');
+    }
+    const s = String(val).trim();
+    if (s.length > 10 && (s.includes('GMT') || s.includes('UTC'))) {
+      const d = new Date(s);
+      if (!isNaN(d)) return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+    }
+    const parts = s.split('-');
+    if (parts.length === 2) return parts[0] + '-' + parts[1].padStart(2, '0');
+    return s;
+  }
+
+  const targetYM = normalizeYM(payload.yearMonth);
+  const rows = ws.getDataRange().getValues();
+
+  // 刪除同月份舊資料
+  const allRows = ws.getDataRange().getValues();
+  for (let i = allRows.length - 1; i >= 0; i--) {
+    if (normalizeYM(allRows[i][0]) === targetYM) ws.deleteRow(i + 1);
+  }
+
+  // 一次寫入所有資料（效率更好）
+  if (payload.rows.length > 0) {
+    const dataToWrite = payload.rows.map(row => [
+      targetYM, row.date||'', row.weekday||'',
+      row.morningSnack||'', row.lunchMain||'', row.lunchMeat||'',
+      row.lunchVeg||'', row.lunchBeanEgg||'', row.lunchSoup||'',
+      row.afternoonSnack||'',
+    ]);
+    const startRow = ws.getLastRow() + 1;
+    const range = ws.getRange(startRow, 1, dataToWrite.length, 10);
+    range.setNumberFormat('@');  // 強制純文字，防止自動轉成 Date
+    range.setValues(dataToWrite);
+  }
+  return { success: true, count: payload.rows.length };
+}
+
+
+// ── 用 GET 方式儲存歷史菜單（data 參數為 JSON 字串）──────
+function saveHistoryGet(params) {
   try {
-    const res = await apiFetch({ action:'getAll' });
-    if (res.error) throw new Error(res.error);
-    showMsg('settingMsg','✅ 連線成功！資料庫已讀取。','success');
-  } catch(e) {
-    showMsg('settingMsg','❌ 連線失敗：'+e.message,'error');
+    const payload = JSON.parse(params.data);
+    return saveHistory(payload);
+  } catch(err) {
+    return { error: '資料解析失敗：' + err.message };
   }
-  hideLoading();
+}
+
+// ── 寫入版本紀錄（執行一次即可）──────────────────────────
+function updateVersionLog() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName('📋 設計規則與版本');
+  if (!ws) { Logger.log('找不到設計規則與版本分頁'); return; }
+
+  // 找到版本紀錄區塊（找「版次」欄位標題那列）
+  const rows = ws.getDataRange().getValues();
+  let headerRow = -1;
+  for (let i = 0; i < rows.length; i++) {
+    if (String(rows[i][0]).includes('版次') || String(rows[i][0]).includes('v1.0')) {
+      headerRow = i;
+      break;
+    }
+  }
+
+  const newVersions = [
+    ['v1.2', '2026-07-16', '新增 HTML 工具：產生菜單、匯出 Excel（ExcelJS格式化）、匯出 PDF（A4橫向一頁）、假日補班日設定'],
+    ['v1.3', '2026-07-16', '修正：歷史菜單儲存改用 GET 方式（解決 CORS 問題）；修正 Google Sheet 自動將年月轉 Date 物件的問題'],
+    ['v1.4', '2026-07-16', '新增：歷史菜單查詢與下載（與當月匯出相同格式）；新增防重複儲存確認機制'],
+    ['v1.5', '2026-07-16', '調整：移除餐點表設計原則說明列；移除檔名「家長版」字樣；PDF 改為橫向單頁格式'],
+  ];
+
+  // 找到最後一筆版本紀錄後面插入
+  let lastVersionRow = -1;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][0]).match(/^v\d+\.\d+/)) {
+      lastVersionRow = i + 1; // 轉成 1-based
+      break;
+    }
+  }
+
+  if (lastVersionRow === -1) {
+    Logger.log('找不到版本紀錄位置');
+    return;
+  }
+
+  // 在最後一筆後面依序加入新版本
+  newVersions.forEach((ver, idx) => {
+    const targetRow = lastVersionRow + idx + 1;
+    const range = ws.getRange(targetRow, 1, 1, 3);
+    range.setValues([ver]);
+    range.setFontFamily('Arial');
+    range.setFontSize(10);
+  });
+
+  Logger.log('✅ 版本紀錄已更新，新增 ' + newVersions.length + ' 筆');
+}
+// 貼到 Apps Script 執行一次，更新設計規則與版本紀錄
+
+function updateRulesAndVersion() {
+  const ss = SpreadsheetApp.openById('1IbyZEOf3cTEgEGYwPH8sev3WhdrLJxIPGfzlHhaT56g');
+  const ws = ss.getSheetByName('📋 設計規則與版本');
+  if (!ws) { Logger.log('找不到分頁'); return; }
+
+  const rows = ws.getDataRange().getValues();
+
+  // ── 找到點心設計規則區塊，補入新規則 ──
+  // 找 S4（乳製品每週至少一次）那列
+  for (let i = 0; i < rows.length; i++) {
+    const val = String(rows[i][0] || '');
+    // 找到舊的乳製品規則，更新說明
+    if (val === 'S3') {
+      ws.getRange(i+1, 3).setValue(
+        '每週至少一次；額外附加於點心旁，不取代點心；優先搭配麵包糕點類，避免搭配粥飯麵食類、甜湯類'
+      );
+      Logger.log('✅ 更新 S3 乳製品規則');
+    }
+    // 找到 S4（甜鹹錯開），更新說明
+    if (val === 'S4') {
+      ws.getRange(i+1, 3).setValue(
+        '避免同日上下午點心都是甜的（可兩餐都鹹、或一甜一鹹）；前後天點心也避免同甜'
+      );
+      Logger.log('✅ 更新 S4 甜鹹規則');
+    }
+    // 找到 S5（同性質避免），更新說明
+    if (val === 'S5') {
+      ws.getRange(i+1, 3).setValue(
+        '同日上下午點心不可同屬一類（粥飯麵食類、麵包糕點類、甜湯類、鹹食類）；前後天點心也避免同性質'
+      );
+      Logger.log('✅ 更新 S5 同性質規則');
+    }
+  }
+
+  // ── 版本紀錄：補入 v1.2～v1.5 ──
+  let lastVersionRow = -1;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    if (String(rows[i][0]).match(/^v\d+\.\d+/)) {
+      lastVersionRow = i + 1;
+      break;
+    }
+  }
+
+  if (lastVersionRow === -1) { Logger.log('找不到版本紀錄位置'); return; }
+
+  const newVersions = [
+    ['v1.2', '2026-07-16', '新增 HTML 工具：產生菜單、匯出 Excel（ExcelJS格式化）、匯出 PDF（A4橫向單頁）、假日補班日設定'],
+    ['v1.3', '2026-07-16', '修正：歷史菜單儲存改用 GET 方式（解決 CORS 問題）；修正 Google Sheet 自動將年月轉 Date 物件問題'],
+    ['v1.4', '2026-07-16', '新增：歷史菜單查詢與下載（與當月匯出相同格式）；新增防重複儲存確認機制'],
+    ['v1.5', '2026-07-16', '調整：移除設計原則說明列；移除「家長版」字樣；PDF 改為橫向單頁格式'],
+    ['v1.6', '2026-07-16', '調整：乳製品改為額外附加於點心旁（不取代點心）；優先搭配麵包糕點類；前後天點心避免同性質同甜鹹；點心重複避免擴大至整月（limit=20）'],
+  ];
+
+  // 檢查是否已有 v1.2 以後的版本，避免重複新增
+  const existingVersions = rows.map(r => String(r[0]));
+  const newToAdd = newVersions.filter(v => !existingVersions.includes(v[0]));
+
+  newToAdd.forEach((ver, idx) => {
+    const targetRow = lastVersionRow + idx + 1;
+    const range = ws.getRange(targetRow, 1, 1, 3);
+    range.setValues([ver]);
+    range.setFontFamily('Arial');
+    range.setFontSize(10);
+  });
+
+  Logger.log(`✅ 版本紀錄已更新，新增 ${newToAdd.length} 筆`);
+  Logger.log('完成！');
 }
 
 // ══════════════════════════════════════════════════════════
-// 啟動
+// 新增品項
 // ══════════════════════════════════════════════════════════
-window.addEventListener('load', initApp);
-</script>
-</body>
-</html>
+function addItem(payload) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName(SHEETS[payload.sheetKey]);
+  if (!ws) return { error: '找不到分頁：' + payload.sheetKey };
+  ws.appendRow(payload.rowData);
+  return { success: true };
+}
+
+// ══════════════════════════════════════════════════════════
+// 更新狀態（啟用／停用）
+// ══════════════════════════════════════════════════════════
+function updateStatus(payload) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName(SHEETS[payload.sheetKey]);
+  if (!ws) return { error: '找不到分頁：' + payload.sheetKey };
+  const rows = ws.getDataRange().getValues();
+  for (let i = 3; i < rows.length; i++) {
+    if (String(rows[i][1]) === payload.itemName) {
+      ws.getRange(i + 1, rows[i].length).setValue(payload.status);
+      return { success: true };
+    }
+  }
+  return { error: '找不到品項：' + payload.itemName };
+}
+
+// ══════════════════════════════════════════════════════════
+// 新增假日
+// ══════════════════════════════════════════════════════════
+function addHoliday(payload) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName(SHEETS.holidays);
+  if (!ws) return { error: '找不到假日清單分頁' };
+
+  const name = payload.name;
+  const date = payload.date;
+  const type = payload.type || '放假日';
+
+  if (!date || !name) return { error: '缺少日期或名稱' };
+
+  // 計算編號（資料從第4列開始）
+  const lastRow = ws.getLastRow();
+  const nextNo = lastRow >= 3 ? lastRow - 2 : 1;
+
+  // 寫入時強制文字格式，避免日期被自動轉換
+  const targetRow = lastRow + 1;
+  const range = ws.getRange(targetRow, 1, 1, 5);
+  range.setNumberFormat('@');
+  range.setValues([[nextNo, name, date, type, '']]);
+
+  return { success: true };
+}
+
+// ══════════════════════════════════════════════════════════
+// 刪除假日
+// ══════════════════════════════════════════════════════════
+function deleteHoliday(payload) {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const ws = ss.getSheetByName(SHEETS.holidays);
+  if (!ws) return { error: '找不到假日清單分頁' };
+
+  const targetDate = payload.date;
+  const rows = ws.getDataRange().getValues();
+
+  for (let i = rows.length - 1; i >= 3; i--) {
+    let rowDate = rows[i][2];
+    // 處理 Date 物件
+    if (rowDate instanceof Date) {
+      rowDate = rowDate.getFullYear() + '-'
+        + String(rowDate.getMonth() + 1).padStart(2, '0') + '-'
+        + String(rowDate.getDate()).padStart(2, '0');
+    } else {
+      rowDate = String(rowDate || '').trim();
+    }
+    if (rowDate === targetDate) {
+      ws.deleteRow(i + 1);
+      return { success: true };
+    }
+  }
+  return { error: '找不到該日期：' + targetDate };
+}
+
+// ══════════════════════════════════════════════════════════
+// 測試新增假日（在 Apps Script 介面直接執行）
+// ══════════════════════════════════════════════════════════
+function testAddHoliday() {
+  Logger.log('=== 檢查函式是否存在 ===');
+  Logger.log('addHoliday 型別：' + typeof addHoliday);
+  Logger.log('deleteHoliday 型別：' + typeof deleteHoliday);
+  Logger.log('addItem 型別：' + typeof addItem);
+  Logger.log('updateStatus 型別：' + typeof updateStatus);
+
+  Logger.log('\n=== 測試新增假日 ===');
+  const result = addHoliday({
+    name: '測試假日',
+    date: '2026-12-31',
+    type: '放假日'
+  });
+  Logger.log('結果：' + JSON.stringify(result));
+
+  Logger.log('\n=== 測試刪除剛才新增的 ===');
+  const del = deleteHoliday({ date: '2026-12-31' });
+  Logger.log('刪除結果：' + JSON.stringify(del));
+}
+
+
+// ══════════════════════════════════════════════════════════
+// 新增品項（GET 方式，rowData 為 JSON 字串）
+// ══════════════════════════════════════════════════════════
+function addItemGet(params) {
+  try {
+    const payload = {
+      sheetKey: params.sheetKey,
+      rowData: JSON.parse(params.rowData)
+    };
+    return addItem(payload);
+  } catch(err) {
+    return { error: '資料解析失敗：' + err.message };
+  }
+}
